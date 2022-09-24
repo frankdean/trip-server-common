@@ -1,0 +1,17 @@
+[Unit]
+Description=Example Web Server
+After=postgresql.service
+
+[Service]
+ExecStart=/usr/local/bin/example --verbose --listen 0.0.0.0 --port 8080 --root /home/vagrant/build
+#WorkingDirectory=/home/vagrant/tmp
+Restart=always
+#RestartSec=10
+StandardOutput=append:/var/log/example.log
+SyslogIdentifier=example
+User=vagrant
+Group=vagrant
+Environment=LANG=en_GB.UTF-8 LC_ALL=en_GB.UTF-8
+
+[Install]
+WantedBy=multi-user.target
