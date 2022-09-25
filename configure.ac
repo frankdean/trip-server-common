@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([trip-server-common], [0.0.1], [frank.dean@fdsd.co.uk])
+AC_INIT([trip-server-common], [0.0.1-alpha.1], [frank.dean@fdsd.co.uk])
 AC_COPYRIGHT([Copyright (C) 2022 Frank Dean])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign dist-xz subdir-objects])
 AC_CONFIG_SRCDIR([src/http_request_factory.cpp])

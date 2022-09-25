@@ -2,18 +2,36 @@
 
 # Trip Server Common
 
+This package contains code from the Trip Server 2 application which is
+currently being developed as a port of [Trip Server][trip-server].  The code
+in this module is intended to be useful common code for building web servers
+generally.
+
+Currently it is under active development and potentially subject to large
+changes, and therefore not recommended for use on other projects at this time.
+
+`./src/example.cpp` contains a fairly minimal example application that
+demonstrates serving pages that do or do not require authentication and
+session management.
+
 ## Building
+
+These instructions are for building and installing from the source
+distribution tarball, which contains additional artefacts to those maintained
+under Git source control.  Building from a cloned Git repository requires
+additional packages to be installed as described below.
 
 ### Debian
 
-For Debian versions 10 and 11.
+For Debian version 11 (Bullseye).
 
 Minimal packages required to build from the source distribution tarball:
 
 - g++
+- gawk
+- libpqxx-dev
 - make
 - uuid-dev
-- libpqxx-dev
 
 To build the application:
 
@@ -24,11 +42,11 @@ Optionally, run the tests:
 
 	$ make check
 
-Optionally install:
+Install:
 
 	$ sudo make install
 
-Minimal packages to build from Git clone:
+Additional packages required to build from Git clone:
 
 - automake
 - autoconf-archive
@@ -38,17 +56,13 @@ To re-create the required Gnu autotools files:
 	$ autoreconf -i
 	$ automake --add-missing --copy
 
-Optionally install the `uuid-runtime` packages which runs a daemon
-that `libuuid` uses to create secure UUIDs.
-
-To run as a daemon, create a system user, e.g.
-
-	$ sudo adduser trip --system --group --home /nonexistent --no-create-home
+Optionally install the `uuid-runtime` package which runs a daemon that
+`libuuid` uses to create secure UUIDs.
 
 ### macOS
 
 Download, build and install the latest 6.x release of libpqxx from
-<https://github.com/jtv/libpqxx/releases/tag/6.4.5>.
+<https://github.com/jtv/libpqxx/releases/tag/6.4.8>.
 
 `libpqxx` needs the `doxygen` and `xmlto` packages installed to build the
 refence documentation and tutorial.  Pass `--disable-documentation` to the
@@ -62,9 +76,12 @@ e.g.:
 
 Add `CXXFLAGS='-g -O0'` to disable compiler optimisation.
 
-To build from a Git clone, install the following ports from MacPorts:
+To build from a Git clone, install the following ports from [MacPorts][]:
 
+- autoconf
 - automake
 - autoconf-archive
+- gawk
+- pkgconfig
 
 [MacPorts]: http://www.macports.org/ "MacPorts Home Page"
