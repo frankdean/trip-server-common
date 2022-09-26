@@ -85,3 +85,4 @@ To build from a Git clone, install the following ports from [MacPorts][]:
 - pkgconfig
 
 [MacPorts]: http://www.macports.org/ "MacPorts Home Page"
+[trip-server]: https://www.fdsd.co.uk/trip-server/ "TRIP - Trip Recording and Itinerary Planner"
