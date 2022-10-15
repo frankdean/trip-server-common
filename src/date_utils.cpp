@@ -29,9 +29,16 @@ using namespace fdsd::utils;
 Logger DateTime::logger = Logger("date_utils", std::clog, Logger::info);
 
 const std::regex DateTime::numeric_regex = std::regex("-?[0-9]+(\\.{1})?([0-9]+)?");
-/// Regex to ensure the date part of a string looks valid
-const std::regex DateTime::valid_yyyy_mm_dd_regex =
-  std::regex("[0-9]{1,4}[^0-9]{1}[0-9]{2}[^0-9]{1}[0-9]{2}.*");
+
+// /// Regex to ensure the date part of a string looks valid
+// const std::regex DateTime::valid_yyyy_mm_dd_regex =
+//   std::regex("[0-9]{1,4}[^0-9]{1}[0-9]{2}[^0-9]{1}[0-9]{2}.*");
+
+/// Regex for splitting ISO 8601 Date and Time strings
+const std::regex DateTime::iso8601_regex =
+  std::regex("([0-9]{4})-?([0-9]{2})-?([0-9]{2})"
+             "(?:[T\\s]([0-9]{2}):?([0-9]{2}):?([0-9]{2})?([\\.,][0-9]+)?"
+             "(([-+\\s])([0-9]{2}):?([0-9]{2})?|Z)?)?");
 
 // const std::string invalid_date_format = "Invalid date format";
 
@@ -40,25 +47,30 @@ std::mutex g_datetime_mutex;
 
 DateTime::DateTime() : default_format(yyyy_mm_dd_hh_mm_ss)
 {
-  datetime = std::chrono::system_clock::to_time_t(
-      std::chrono::system_clock::now());
+  datetime = std::chrono::system_clock::now();
 }
 
-DateTime::DateTime(std::string date, date_format format) : DateTime()
+DateTime::DateTime(std::string date) : DateTime()
 {
-  init(date, format);
+  init(date);
 }
 
-void DateTime::init(std::string date, date_format format)
+void DateTime::init(std::string date)
 {
   // std::cout << "DateTime converting \"" << date << "\"\n";
   if (std::regex_match(date, numeric_regex)) {
-    init(std::stol(date));
+    set_ms(std::stol(date) * 1000);
     return;
   }
+  bool localtime = true;
   std::tm tm {};
-  switch (format){
-    case dd_mon_yyyy_hh_mm_ss: {
+  // The date should now be in the format similar to yyyy_mm_dd...
+  std::smatch m;
+
+  bool is_iso_8601 = std::regex_match(date, m, iso8601_regex);
+  // If not ISO 8601, try converting as dd_mon_yyyy_hh_mm_ss
+  if (!is_iso_8601) {
+    try {
       // std::cout << "Converting \"" << date << "\" as dd_mon_yyyy_hh_mm_ss\n";
       std::istringstream is(date);
       is >> std::get_time(&tm, "%d %b %Y %T");
@@ -67,42 +79,55 @@ void DateTime::init(std::string date, date_format format)
       std::ostringstream os;
       os << std::put_time(&tm, "%FT%T");
       date = os.str();
-      break;
-    }
-    case yyyy_mm_dd_hh_mm_ss_z:
-    case yyyy_mm_dd_hh_mm_ss:
-    case yyyy_mm_dd: {
-      break;
-    }
-  }
-
-  // The date should now be in the format similar to yyyy_mm_dd..
-  if (std::regex_match(date, valid_yyyy_mm_dd_regex)) {
-    // std::cout << "Converting date: \"" << date << "\"\n";
-    try {
-      auto n = date.size();
-      if (n > 3)
-        tm.tm_year = std::stoi(date.substr(0, 4)) - year_offset;
-      if (n > 6)
-        tm.tm_mon = std::stoi(date.substr(5, 2)) - month_offset;
-      if (n > 9)
-        tm.tm_mday = std::stoi(date.substr(8, 2));
-      if (format == yyyy_mm_dd_hh_mm_ss) {
-        if (n > 12)
-          tm.tm_hour = std::stoi(date.substr(11, 2));
-        if (n > 15)
-          tm.tm_min = std::stoi(date.substr(14, 2));
-        if (n > 18)
-          tm.tm_sec = std::stoi(date.substr(17, 2));
-      }
     } catch (const std::invalid_argument& e) {
       logger << Logger::debug
              << "Error converting date: \""
              << date
              << "\": " << e.what() << Logger::endl;
+      datetime = std::chrono::system_clock::from_time_t(-1);
     }
-    // negative when no DST information available
-    tm.tm_isdst = -1;
+    // The date should now be in the ISO 8601 format.
+    // Redo the regex match
+    is_iso_8601 = std::regex_match(date, m, iso8601_regex);
+  }
+
+  if (is_iso_8601) {
+    // std::cout << "Converting date: \"" << date << "\"\n";
+    double fraction = 0;
+    double zone_hours = 0;
+    // try {
+      tm.tm_year = std::stoi(m[1]) - year_offset;
+      tm.tm_mon = std::stoi(m[2]) - month_offset;
+      tm.tm_mday = std::stoi(m[3]);
+      if (m[8] == "Z") {
+        localtime = false;
+      } else if (m[8] != "") {
+        localtime = false;
+        int sign = m[9] == "-" ? -1 : 1;
+        if (m[10] != "")
+          zone_hours = std::stoi(m[10]);
+        if (m[11] != "") {
+          double zone_minutes = std::stoi(m[11]);
+          zone_hours += zone_minutes / 60;
+        }
+        zone_hours *= sign;
+        // std::cout << "Zone hours: " << zone_hours << '\n';
+      }
+      if (m[4] != "")
+        tm.tm_hour = std::stoi(m[4]);
+      if (m[5] != "")
+        tm.tm_min = std::stoi(m[5]);
+      if (m[6] != "")
+        tm.tm_sec = std::stoi(m[6]);
+      if (m[7] != "")
+        fraction = std::stod(m[7]);
+      // std::cout << "Fraction: " << fraction << '\n';
+    // } catch (const std::invalid_argument& e) {
+    //   logger << Logger::debug
+    //          << "Error converting date: \""
+    //          << date
+    //          << "\": " << e.what() << Logger::endl;
+    // }
     std::lock_guard<std::mutex> lock(g_datetime_mutex);
     // std::cout << "year: " << tm.tm_year
     //           << ", month: " << tm.tm_mon
@@ -110,13 +135,28 @@ void DateTime::init(std::string date, date_format format)
     //           << ", hours: " << tm.tm_hour
     //           << ", minutes: " << tm.tm_min
     //           << ", seconds: " << tm.tm_sec << '\n';
-    datetime = std::mktime(&tm);
+    // If we have input time zone information, use the timegm C function to
+    // treat the input time as GMT/UTC
+
+    std::time_t time_t;
+    if (localtime) {
+      tm.tm_isdst = -1;
+      time_t = std::mktime(&tm);
+    } else {
+      time_t = ::timegm(&tm);
+    }
+    datetime = std::chrono::system_clock::from_time_t(time_t);
+    // std::cout << "Time before adjustment " << to_string() << '\n';
+    if (fraction > 0 || zone_hours != 0) {
+      set_ms(get_ms() + fraction * 1000 - zone_hours * 3600000);
+      // std::cout << "Time after adjustment " << to_string() << '\n';
+    }
   } else {
     logger << Logger::debug
            << "Error converting date: \""
            << date
            << "\"" << Logger::endl;
-    datetime = -1;
+    throw std::invalid_argument("Unable to parse date");
   }
 }
 
@@ -135,18 +175,29 @@ DateTime::DateTime(std::tm &tm) : DateTime()
   init(os.str());
 }
 
-DateTime::DateTime(const std::time_t t) : DateTime()
+// DateTime::DateTime(const std::time_t t) : DateTime()
+// {
+//   init(t);
+// }
+
+// void DateTime::init(const std::time_t t)
+// {
+//   datetime = std::chrono::system_clock::from_time_t(t);
+// }
+
+void DateTime::set_time_t(std::time_t t)
 {
-  init(t);
+  datetime = std::chrono::system_clock::from_time_t(t);
 }
 
-void DateTime::init(const std::time_t t)
+void DateTime::set_ms(long long ms)
 {
-  datetime = t;
+  datetime = std::chrono::system_clock::time_point(
+      std::chrono::milliseconds(ms));
 }
 
 DateTime::DateTime(const std::chrono::system_clock::time_point tp) {
-  datetime = std::chrono::system_clock::to_time_t(tp);
+  datetime = tp;
 }
 
 DateTime::DateTime(int year, int month, int day,
@@ -163,7 +214,7 @@ DateTime::DateTime(int year, int month, int day,
   t.tm_isdst = -1;
 
   std::lock_guard<std::mutex> lock(g_datetime_mutex);
-  datetime = std::mktime(&t);
+  datetime = std::chrono::system_clock::from_time_t(std::mktime(&t));
 }
 
 std::tm DateTime::convert(std::time_t t) const
@@ -188,13 +239,30 @@ std::tm DateTime::convert(std::time_t t) const
   return r;
 }
 
-std::string DateTime::get_time_as_rfc7231()
+std::string DateTime::get_time_as_rfc7231() const
 {
   // https://httpwg.org/specs/rfc7231.html#http.date
   // Wed, 03 Nov 2021 14:47:53 GMT
   std::ostringstream ss;
   std::lock_guard<std::mutex> lock(g_datetime_mutex);
-  ss << std::put_time(gmtime(&datetime), "%a, %d %b %Y %H:%M:%S GMT");
+  auto time_t = std::chrono::system_clock::to_time_t(datetime);
+  ss << std::put_time(gmtime(&time_t), "%a, %d %b %Y %H:%M:%S GMT");
+  return ss.str();
+}
+
+std::string DateTime::get_time_as_iso8601_gmt() const
+{
+  std::ostringstream ss;
+  const long ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+      datetime.time_since_epoch()).count();
+  const long seconds = std::chrono::duration_cast<std::chrono::seconds>(
+      datetime.time_since_epoch()).count();
+  const double r = round((static_cast<double>(ms) / 1000 - seconds) * 1000);
+  std::lock_guard<std::mutex> lock(g_datetime_mutex);
+  auto time_t = std::chrono::system_clock::to_time_t(datetime);
+  ss << std::put_time(gmtime(&time_t), "%FT%T");
+  ss << "." << std::fixed << std::setprecision(0) << std::setw(3)
+     << std::setfill('0') << r << 'Z';
   return ss.str();
 }
 
@@ -209,24 +277,27 @@ std::string DateTime::get_time_as_rfc7231()
 //   std::string do_grouping() const { return "\3"; } // groups of 3 digits
 // };
 
+
+
 std::string DateTime::to_string(date_format format) const
 {
   std::ostringstream s;
+  auto time_t = std::chrono::system_clock::to_time_t(datetime);
   switch (format) {
     case yyyy_mm_dd: {
-      s << std::put_time(std::localtime(&datetime), "%F");
+      s << std::put_time(std::localtime(&time_t), "%F");
       break;
     }
     case yyyy_mm_dd_hh_mm_ss: {
-      s << std::put_time(std::localtime(&datetime), "%FT%T");
+      s << std::put_time(std::localtime(&time_t), "%FT%T");
       break;
     }
     case dd_mon_yyyy_hh_mm_ss: {
-      s << std::put_time(std::localtime(&datetime), "%d %b %Y %T");
+      s << std::put_time(std::localtime(&time_t), "%d %b %Y %T");
       break;
     }
     case yyyy_mm_dd_hh_mm_ss_z: {
-      s << std::put_time(std::localtime(&datetime), "%F %T %Z");
+      s << std::put_time(std::localtime(&time_t), "%F %T %Z");
       break;
     }
   }
@@ -254,7 +325,7 @@ std::string DateTime::to_string(date_format format) const
 }
 
 /**
- * \param base_t the base date for the repeating period.  It can be today, the
+ * \param base_tp the base date for the repeating period.  It can be today, the
  * past or the future.
  *
  * \param frequency - the frequency in days for the repeating period.
@@ -262,10 +333,10 @@ std::string DateTime::to_string(date_format format) const
  * \return the date that begins the current period, based on the passed base
  * date.
  */
-std::time_t DateTime::period_start_date(std::time_t base_t, int frequency) const {
-  const auto base_tp = std::chrono::system_clock::from_time_t(base_t);
+std::chrono::system_clock::time_point DateTime::period_start_date(
+    std::chrono::system_clock::time_point base_tp, int frequency) const {
   const auto freq_dur_hours = std::chrono::hours(frequency * 24);
-  const auto this_tp = std::chrono::system_clock::from_time_t(datetime);
+  const auto this_tp = datetime;
   auto diff = this_tp - base_tp;
   if (this_tp < base_tp)
     diff += std::chrono::hours(24);
@@ -273,11 +344,11 @@ std::time_t DateTime::period_start_date(std::time_t base_t, int frequency) const
   auto tp = this_tp - remainder;
   if (this_tp < base_tp)
     tp -= freq_dur_hours - std::chrono::hours(24);
-  return std::chrono::system_clock::to_time_t(tp);
+  return tp;
 }
 
 /**
- * \param base_t the base date for the repeating period.  It can be today, the
+ * \param base_tp the base date for the repeating period.  It can be today, the
  * past or the future.
  *
  * \param frequency - the frequency in days for the repeating period.
@@ -285,10 +356,10 @@ std::time_t DateTime::period_start_date(std::time_t base_t, int frequency) const
  * \return the next due date for a repeating period, based on the passed base
  * date.
  */
-std::time_t DateTime::period_end_date(std::time_t base_t, int frequency) const {
-  const auto base_tp = std::chrono::system_clock::from_time_t(base_t);
+std::chrono::system_clock::time_point DateTime::period_end_date(
+    std::chrono::system_clock::time_point base_tp, int frequency) const {
   const auto freq_dur_hours = std::chrono::hours(frequency * 24);
-  const auto this_tp = std::chrono::system_clock::from_time_t(datetime);
+  const auto this_tp = datetime;
 
   auto diff = this_tp - base_tp;
   if (this_tp < base_tp)
@@ -297,5 +368,5 @@ std::time_t DateTime::period_end_date(std::time_t base_t, int frequency) const {
     (this_tp < base_tp ?
      std::chrono::hours(0) :
      freq_dur_hours - std::chrono::hours(24));
-  return std::chrono::system_clock::to_time_t(tp);
+  return tp;
 }

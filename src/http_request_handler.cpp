@@ -50,8 +50,10 @@ struct mime_type {
   { "css", "text/css; charset=UTF-8" },
   { "geojson",  "application/geojson; charset=UTF-8" },
   { "gif",  "image/gif" },
+  { "gpx",  "application/gpx+xml" },
   { "htm",  "text/html; charset=UTF-8" },
   { "html", "text/html; charset=UTF-8" },
+  { "kml",  "application/vnd.google-earth.kml+xml" },
   { "pdf", "application/pdf" },
   { "jpg",  "image/jpeg" },
   { "js",   "text/javascript; charset=UTF-8" },
@@ -161,7 +163,7 @@ void FileRequestHandler::append_body_content(
   // std::cout << "Full path to file: \"" << full_path << "\"\n";
 
   if (!FileUtils::is_file(full_path)) {
-    set_page_title(response.get_status_message(HTTPStatus::not_found));
+    response.status_code = HTTPStatus::not_found;
     create_full_html_page_for_standard_response(response);
     return;
   }
@@ -271,10 +273,14 @@ void FileRequestHandler::handle_request(
   FileUtils::strip_query_params(relative_path);
   // std::cout << "handle_request() relative path: \"" << relative_path << "\"\n";
 
-  if (relative_path.find("/../") != std::string::npos ||
+  // Forbid hidden files and directories
+  if (relative_path.find("/.") != std::string::npos ||
+      // Enable the following rule to stop directory traversal, should hidden
+      // files or directories be allowed in the future.  (The rule above also
+      // prohibits directory traversal.)
+      //   relative_path.find("/../") != std::string::npos ||
       relative_path.find("../") == 0) {
-    // std::cout << "Path is BAD\n";
-    set_page_title(response.get_status_message(HTTPStatus::forbidden));
+    response.status_code = HTTPStatus::forbidden;
     create_full_html_page_for_standard_response(response);
     return;
   }
@@ -295,13 +301,13 @@ void FileRequestHandler::handle_request(
       handle_directory(request, response);
       response.content << "  </body>\n";
       append_html_end(response.content);
-      set_content_type(response.content);
+      set_content_headers(response);
+      response.set_header("Content-Type", get_mime_type("html"));
       return;
     } catch (const FileUtils::DirectoryAccessFailedException& e) {
       response.content.clear();
       response.content.str("");
-      set_page_title(response.get_status_message(
-                         HTTPStatus::internal_server_error));
+      response.status_code = HTTPStatus::internal_server_error;
       create_full_html_page_for_standard_response(response);
       return;
     }
@@ -406,14 +412,18 @@ void BaseRequestHandler::append_html_end(std::ostream& os) const
 
 void BaseRequestHandler::set_content_headers(HTTPServerResponse& response) const
 {
-  response.set_header("Content-Length", std::to_string(response.content.str().length()));
+  response.set_header("Content-Length",
+                      std::to_string(response.content.str().length()));
   response.set_header("Content-Type", get_mime_type("html"));
   response.set_header("Cache-Control", "no-cache");
 }
 
 void BaseRequestHandler::create_full_html_page_for_standard_response(
-    HTTPServerResponse& response) const
+    HTTPServerResponse& response)
 {
+  const std::string status_message =
+    response.get_status_message(HTTPStatus::forbidden);
+  set_page_title(status_message);
   append_doc_type(response.content);
   append_html_start(response.content);
   append_head_start(response.content);
@@ -422,6 +432,8 @@ void BaseRequestHandler::create_full_html_page_for_standard_response(
   append_head_content(response.content);
   append_head_end(response.content);
   append_body_start(response.content);
+  response.content
+    << "<h1>" << status_message << "</h1>\n";
   append_body_end(response.content);
   append_html_end(response.content);
   set_content_headers(response);

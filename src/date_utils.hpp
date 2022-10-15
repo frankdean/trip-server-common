@@ -54,12 +54,14 @@ namespace utils
   class DateTime
   {
   private:
-    std::time_t datetime;
+    std::chrono::system_clock::time_point datetime;
+    // std::time_t datetime;
     std::tm convert(std::time_t t) const;
     static Logger logger;
   public:
     static const std::regex numeric_regex;
-    static const std::regex valid_yyyy_mm_dd_regex;
+    // static const std::regex valid_yyyy_mm_dd_regex;
+    static const std::regex iso8601_regex;
     enum date_format {
       yyyy_mm_dd_hh_mm_ss,
       yyyy_mm_dd_hh_mm_ss_z,
@@ -71,28 +73,35 @@ namespace utils
       // mm_dd_yyyy_hh_mm_ss
     };
     DateTime();
-    DateTime(std::string, DateTime::date_format format = yyyy_mm_dd_hh_mm_ss);
+    DateTime(std::string);
     DateTime(std::tm &tm);
-    DateTime(std::time_t);
+    // DateTime(std::time_t);
     DateTime(std::chrono::system_clock::time_point);
     DateTime(int year, int month, int day,
              int hour = 0, int minute = 0, int second = 0);
-    void init(std::string, DateTime::date_format format = yyyy_mm_dd_hh_mm_ss);
-    void init(std::time_t);
+    void init(std::string);
+    // void init(std::time_t);
+    void set_time_t(std::time_t t);
+    void set_ms(long long ms);
     date_format default_format;
+    long long get_ms() const {
+      return std::chrono::duration_cast<std::chrono::milliseconds>(
+          datetime.time_since_epoch()).count();
+    }
     std::time_t get_time() const {
-      return datetime;
+      return std::chrono::system_clock::to_time_t(datetime);
     }
     std::time_t time_t() const {
-      return datetime;
+      return get_time();
     }
     std::chrono::system_clock::time_point time_tp() const {
-      return std::chrono::system_clock::from_time_t(time_t());
+      return datetime;
     }
     std::tm get_time_as_tm() const {
-      return convert(datetime);
+      return convert(get_time());
     }
-    std::string get_time_as_rfc7231();
+    std::string get_time_as_rfc7231() const;
+    std::string get_time_as_iso8601_gmt() const;
     std::string to_string(date_format format) const;
     std::string to_string() const {
       return to_string(yyyy_mm_dd_hh_mm_ss);
@@ -107,8 +116,10 @@ namespace utils
     inline friend bool operator< (const DateTime& lhs, const DateTime& rhs) {
       return lhs.datetime < rhs.datetime;
     }
-    std::time_t period_start_date(std::time_t base_t, int frequency) const;
-    std::time_t period_end_date(std::time_t base_t, int frequency) const;
+    std::chrono::system_clock::time_point period_start_date(
+        std::chrono::system_clock::time_point base_tp, int frequency) const;
+    std::chrono::system_clock::time_point period_end_date(
+        std::chrono::system_clock::time_point base_tp, int frequency) const;
   };
 
 } // namespace utils

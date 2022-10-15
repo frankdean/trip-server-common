@@ -38,9 +38,11 @@ example_SOURCES = \
 	worker.cpp \
 	worker.hpp
 
-check_PROGRAMS = test_uuid test_date_utils test_file_utils test_uri_utils \
-	test_debug_utils test_pagination test_pool
+check_PROGRAMS = test_uuid test_dao_helper test_date_utils test_file_utils \
+	test_uri_utils test_debug_utils test_pagination test_pool
 test_uuid_SOURCES = test_uuid.cpp
+test_dao_helper_SOURCES = test_dao_helper.cpp date_utils.cpp date_utils.hpp \
+	logger.cpp logger.hpp
 test_date_utils_SOURCES = test_date_utils.cpp logger.cpp logger.hpp
 test_file_utils_SOURCES = test_file_utils.cpp date_utils.cpp date_utils.hpp \
 	logger.cpp logger.hpp

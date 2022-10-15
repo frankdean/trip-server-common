@@ -229,7 +229,9 @@ file_details FileUtils::get_file_details(std::string path)
   struct stat s;
   if (stat(path.c_str(), &s) == 0) {
     retval.size = s.st_size;
-    retval.datetime = DateTime(s.st_mtime);
+    DateTime dt;
+    dt.set_ms(s.st_mtime);
+    retval.datetime = dt;
     retval.type = get_type(s);
   } else {
     std::cerr << "Failed to get time of last modification for \""
@@ -275,7 +277,9 @@ std::vector<dir_entry> FileUtils::get_directory(std::string path)
 
       std::string file_path = path + '/' + e.name;
       if (stat(file_path.c_str(), &s_stat) == 0) {
-        e.datetime = DateTime(s_stat.st_mtime);
+        DateTime dt;
+        dt.set_time_t(s_stat.st_mtime);
+        e.datetime = dt;
         e.size = (intmax_t) s_stat.st_size;
         e.type = get_type(s_stat);
       } else {

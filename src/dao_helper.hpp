@@ -22,6 +22,7 @@
 #ifndef DAO_HELPER_HPP
 #define DAO_HELPER_HPP
 
+#include <chrono>
 #include <ctime>
 #include <map>
 #include <string>
@@ -31,10 +32,22 @@ namespace utils {
 
 struct dao_helper {
   enum result_order { descending, ascending };
-  bool contains(const std::map<std::string, std::string> &params,
-                std::string key) const;
-  std::string get_value(const std::map<std::string, std::string> &params,
-                        std::string key, std::string default_value = "") const;
+  static bool contains(const std::map<std::string, std::string> &params,
+                std::string key);
+  static std::string get_value(const std::map<std::string, std::string> &params,
+                               std::string key, std::string default_value = "");
+  static std::pair<bool, int> get_optional_int_value(
+    const std::map<std::string, std::string> &params,
+    std::string key);
+  static std::pair<bool, std::string> get_optional_value(
+      const std::map<std::string, std::string> &params,
+      std::string key);
+  static std::pair<bool, float> get_optional_float_value(
+      const std::map<std::string, std::string> &params,
+      std::string key);
+  static std::pair<bool, double> get_optional_double_value(
+    const std::map<std::string, std::string> &params,
+    std::string key);
   int get_int(const std::map<std::string, std::string> &params,
                   std::string key, int default_value = -1) const;
   long get_long(const std::map<std::string, std::string> &params,
@@ -47,6 +60,8 @@ struct dao_helper {
       std::string key) const;
   std::string date_as_html_input_value(std::time_t time) const;
   static std::time_t convert_libpq_date(std::string date);
+  static std::chrono::system_clock::time_point
+      convert_libpq_date_tz(std::string date);
 };
 
 } // namespace utils

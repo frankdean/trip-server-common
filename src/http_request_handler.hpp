@@ -66,7 +66,7 @@ protected:
   virtual void append_html_end(std::ostream& os) const;
   virtual void set_content_headers(HTTPServerResponse& response) const;
   void create_full_html_page_for_standard_response(
-      HTTPServerResponse& response) const;
+      HTTPServerResponse& response);
 public:
   /// \param uri_prefix the prefix to use for the entire application.
   /// Defaults to an empty string.

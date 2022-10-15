@@ -39,11 +39,10 @@ namespace web
 class Session {
 private:
   std::string user_id;
-  std::time_t last_updated;
+  std::chrono::system_clock::time_point last_updated;
 public:
   Session() {
-    last_updated = std::chrono::system_clock::to_time_t(
-        std::chrono::system_clock::now());
+    last_updated = std::chrono::system_clock::now();
   }
   Session(std::string new_user_id) : Session() {
     user_id = new_user_id;
@@ -51,10 +50,10 @@ public:
   std::string get_user_id() const {
     return user_id;
   }
-  std::time_t get_last_updated_time_t() const {
+  std::chrono::system_clock::time_point get_last_updated_time_point() const {
     return last_updated;
   }
-  void set_last_updated(std::time_t updated);
+  void set_last_updated(std::chrono::system_clock::time_point updated);
   void set_date(const std::string str_date);
 };
 

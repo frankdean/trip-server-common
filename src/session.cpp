@@ -39,15 +39,14 @@ fdsd::web::SessionManager* SessionManager::get_session_manager()
   return SessionManager::session_manager;
 }
 
-void Session::set_last_updated(std::time_t updated)
+void Session::set_last_updated(std::chrono::system_clock::time_point updated)
 {
-  fdsd::utils::DateTime dt(updated);
   last_updated = updated;
 }
 void Session::set_date(const std::string str_date)
 {
-  fdsd::utils::DateTime t(str_date, fdsd::utils::DateTime::yyyy_mm_dd_hh_mm_ss);
-  last_updated = t.get_time();
+  fdsd::utils::DateTime t(str_date);
+  last_updated = t.time_tp();
 }
 
 /**
@@ -67,8 +66,7 @@ std::pair<bool, std::string>
   if (exists) {
     // std::cout << "Found session for user: " << f->second.get_user_id() << '\n';
     user_id.append(f->second.get_user_id());
-    f->second.set_last_updated(std::chrono::system_clock::to_time_t(
-                                   std::chrono::system_clock::now()));
+    f->second.set_last_updated(std::chrono::system_clock::now());
   // } else {
   //   std::cout << "Failed to find session_id \"" << session_id << "\"";
   }
@@ -98,7 +96,7 @@ void SessionManager::expire_sessions()
   std::chrono::system_clock clock;
   auto now = std::chrono::system_clock::now();
   for (auto session = sessions.begin(); session != sessions.end(); ) {
-    auto diff = now - std::chrono::system_clock::from_time_t(session->second.get_last_updated_time_t());
+    auto diff = now - session->second.get_last_updated_time_point();
     // std::cout << session->first << " duration "
     //           << std::chrono::duration_cast<std::chrono::seconds>(diff).count()
     //           << " seconds\n";
