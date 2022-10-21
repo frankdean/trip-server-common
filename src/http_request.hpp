@@ -146,6 +146,15 @@ public:
     }
     return "";
   }
+  /// Returns the given parameter from either the query or post parameters,
+  /// prioritising POST parameters over GET parameters.
+  std::string get_param(std::string name) const {
+    std::string retval;
+    retval = get_post_param(name);
+    if (retval.empty())
+      retval = get_query_param(name);
+    return retval;
+  }
   std::string get_cookie(std::string cookie_name) const;
 };
 

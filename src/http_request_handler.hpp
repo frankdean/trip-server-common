@@ -26,6 +26,7 @@
 #include "logger.hpp"
 #include <memory>
 #include <ostream>
+#include <regex>
 #include <string>
 
 namespace fdsd
@@ -37,6 +38,17 @@ class HTTPServerRequest;
 class HTTPServerResponse;
 class SessionManager;
 enum HTTPStatus : int;
+
+class BadRequestException : public std::exception {
+  std::string message;
+public:
+  BadRequestException(std::string message) {
+    this->message = message;
+  }
+  virtual const char* what() const throw() override {
+    return message.c_str();
+  }
+};
 
 class BaseRequestHandler {
 private:
@@ -67,6 +79,42 @@ protected:
   virtual void set_content_headers(HTTPServerResponse& response) const;
   void create_full_html_page_for_standard_response(
       HTTPServerResponse& response);
+  virtual void handle_bad_request(const HTTPServerRequest& request,
+                                  HTTPServerResponse& response);
+  /**
+   * Checks whether the passed URL matches the requested wanted_postfix.
+   *
+   * \param full_request_url the full request URL including the application
+   * prefix.
+   *
+   * \param wanted_postfix the portion of the URL to compare.
+   *
+   * \return true if the passed full URL portion starts with the passed
+   * wanted_postfix, ignoring the application prefix URL.
+   */
+  bool compare_request_url(std::string full_request_url,
+                           std::string wanted_postfix) const {
+    const std::string wanted_url = get_uri_prefix() + wanted_postfix;
+    return !full_request_url.empty() &&
+      full_request_url.compare(0, wanted_url.length(), wanted_url) == 0;
+  }
+  /**
+   * Checks whether the passed URL matches the passed regular expression.
+   *
+   * \param full_request_url the full request URL including the application
+   * prefix.
+   *
+   * \param wanted_postfix_regex the portion of the URL to compare.
+   *
+   * \return true if the passed full URL portion starts with the passed
+   * wanted_postfix_regex, ignoring the application prefix URL.
+   */
+  bool compare_request_regex(std::string full_request_url,
+                           std::string wanted_postfix_regex) const {
+    return std::regex_match(
+        full_request_url,
+        std::regex(get_uri_prefix() + wanted_postfix_regex));
+  }
 public:
   /// \param uri_prefix the prefix to use for the entire application.
   /// Defaults to an empty string.

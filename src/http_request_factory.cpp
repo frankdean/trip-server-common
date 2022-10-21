@@ -89,6 +89,9 @@ std::unique_ptr<BaseRequestHandler>
         "the application URL.  Handling as not found.\n" << Logger::endl;
 
     auto h = get_not_found_handler();
+    if (logger.is_level(Logger::debug))
+      logger << Logger::debug
+             << "Created \"" << h->get_handler_name() << "\" handler\n";
     return h;
   } else {
     if (logger.is_level(Logger::debug))
@@ -135,17 +138,13 @@ std::unique_ptr<BaseRequestHandler>
     logger << Logger::debug
            << "Cannot handle URI: \"" << request.uri << "\" handling as not found"
            << Logger::endl;
-  return get_not_found_handler();
-}
 
-// std::unique_ptr<HTTPRequestHandler> HTTPRequestFactory::get_not_found_handler()
-// {
-//   logger
-//     << Logger::debug
-//     << "Returning HTTPNotFoundRequestHandler"
-//     << Logger::endl;
-//   return std::unique_ptr<HTTPNotFoundRequestHandler>(new HTTPNotFoundRequestHandler);
-// }
+  auto h = get_not_found_handler();
+  if (logger.is_level(Logger::debug))
+    logger << Logger::debug
+           << "Created \"" << h->get_handler_name() << "\" handler\n";
+  return h;
+}
 
 std::unique_ptr<HTTPServerResponse>
     HTTPRequestFactory::create_response_object() const

@@ -60,7 +60,9 @@ struct mime_type {
   { "json",  "application/json; charset=UTF-8" },
   { "mjs",   "text/javascript; charset=UTF-8" },
   { "png",  "image/png" },
-  { "txt",  "text/plain; charset=UTF-8" }
+  { "txt",  "text/plain; charset=UTF-8" },
+  { "yaml", "application/x-yaml"},
+  { "yml", "application/x-yaml"}
 };
 
 void BaseRequestHandler::redirect(const HTTPServerRequest& request,
@@ -293,8 +295,8 @@ void FileRequestHandler::handle_request(
       append_html_start(response.content);
       response.content <<
         "  <head>\n"
-        "    <meta charset=\"UTF-8\" />\n"
-        "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n"
+        "    <meta charset=\"UTF-8\" >\n"
+        "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" >\n"
         "    <title>" << "Index of: /" + relative_path << "</title>\n"
         "  </head>\n"
         "  <body>\n";
@@ -365,8 +367,8 @@ void BaseRequestHandler::append_head_start(std::ostream& os) const
 void BaseRequestHandler::append_head_section(std::ostream& os) const
 {
   os <<
-    "    <meta charset=\"UTF-8\" />\n"
-    "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n";
+    "    <meta charset=\"UTF-8\" >\n"
+    "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" >\n";
 }
 
 void BaseRequestHandler::append_head_title_section(std::ostream& os) const
@@ -422,7 +424,7 @@ void BaseRequestHandler::create_full_html_page_for_standard_response(
     HTTPServerResponse& response)
 {
   const std::string status_message =
-    response.get_status_message(HTTPStatus::forbidden);
+    response.get_status_message(response.status_code);
   set_page_title(status_message);
   append_doc_type(response.content);
   append_html_start(response.content);
@@ -439,14 +441,26 @@ void BaseRequestHandler::create_full_html_page_for_standard_response(
   set_content_headers(response);
 }
 
+void BaseRequestHandler::handle_bad_request(
+    const HTTPServerRequest& request,
+    HTTPServerResponse& response)
+{
+  response.content.clear();
+  response.content.str("");
+  response.status_code = HTTPStatus::bad_request;
+  create_full_html_page_for_standard_response(response);
+}
+
 void HTTPRequestHandler::handle_request(
     const HTTPServerRequest& request,
     HTTPServerResponse& response)
 {
-  logger << Logger::debug
-         << "Handling request for \""
-         << request.uri << '\"'
-         << Logger::endl;
+  if (logger.is_level(Logger::debug))
+    logger << Logger::debug
+           << get_handler_name()
+           << " handling request for \""
+           << request.uri << '\"'
+           << Logger::endl;
   int length = response.content.str().length();
   if (length > 0) {
     logger << Logger::warn
@@ -469,7 +483,15 @@ void HTTPRequestHandler::handle_request(
     logger << Logger::debug
            << "Status code before do_handle_request "
            << response.status_code << Logger::endl;
-    do_handle_request(request, response);
+    try {
+      do_handle_request(request, response);
+    } catch (const BadRequestException &e) {
+      handle_bad_request(request, response);
+    } catch (const std::invalid_argument &e) {
+      handle_bad_request(request, response);
+    } catch (const std::out_of_range &e) {
+      handle_bad_request(request, response);
+    }
     logger << Logger::debug
            << "Status code after do_handle_request "
            << response.status_code << Logger::endl;
@@ -745,7 +767,6 @@ void HTTPNotFoundRequestHandler::do_handle_request(
     const HTTPServerRequest& request,
     HTTPServerResponse& response) const
 {
-  redirect(request, response, get_default_uri());
-  std::string message = response.get_status_message(HTTPStatus::not_found);
+  response.status_code = HTTPStatus::not_found;
   response.generate_standard_response(HTTPStatus::not_found);
 }
