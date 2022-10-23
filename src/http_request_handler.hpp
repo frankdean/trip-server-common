@@ -50,6 +50,49 @@ public:
   }
 };
 
+struct UserMessage {
+  /// The type of the error message.
+  enum Type {
+    info,
+    warn,
+    error, // danger in Bootstrap parlance
+    success,
+    light,
+    dark,
+    primary,
+    secondary
+  } type;
+  UserMessage()
+    :
+    UserMessage("", "", info)
+    {}
+  UserMessage(std::string message)
+    :
+    UserMessage(message, "", info)
+    {}
+  UserMessage(std::string message, Type type)
+    :
+    UserMessage(message, "", type)
+    {}
+  UserMessage(std::string message, std::string code)
+    :
+    UserMessage(message, code, info)
+    {}
+  UserMessage(std::string message, std::string code, Type type)
+    :
+    message(message),
+    code(code),
+    type(type)
+    {}
+  ~UserMessage()
+    {}
+  /// A code to identify retrieve a message, e.g. to display it against a
+  /// specific input field that is relevant to the error.
+  std::string code;
+  /// The message to display to the user.
+  std::string message;
+};
+
 class BaseRequestHandler {
 private:
   /// An optional prefix to all the application URLs.
@@ -57,6 +100,7 @@ private:
   std::string page_title;
   std::string html_lang;
 protected:
+  std::vector<UserMessage> messages;
   virtual void redirect(const HTTPServerRequest& request,
                         HTTPServerResponse& response,
                         std::string location) const;
@@ -77,6 +121,18 @@ protected:
   virtual void append_body_end(std::ostream& os) const;
   virtual void append_html_end(std::ostream& os) const;
   virtual void set_content_headers(HTTPServerResponse& response) const;
+  void add_message(UserMessage message) {
+    messages.push_back(message);
+  }
+  /**
+   * Fetches the message containing the passed identifier.  If the message
+   * does not exist, an info message type is returned with an empty code and
+   * message.
+   * @param string code the message identifier.
+   * @return the message identified by the passed code.
+   */
+  UserMessage get_message(std::string code) const;
+  virtual void append_messages_as_html(std::ostream& os) const;
   void create_full_html_page_for_standard_response(
       HTTPServerResponse& response);
   virtual void handle_bad_request(const HTTPServerRequest& request,
@@ -121,7 +177,8 @@ public:
   BaseRequestHandler(std::string uri_prefix) :
     uri_prefix(uri_prefix),
     page_title(),
-    html_lang("en-GB") {}
+    html_lang("en-GB"),
+    messages() {}
   virtual ~BaseRequestHandler() {}
   std::string get_uri_prefix() const { return uri_prefix; }
   virtual std::string get_page_title() const { return page_title; }
@@ -195,7 +252,7 @@ private:
 protected:
   virtual void do_handle_request(
       const HTTPServerRequest& request,
-      HTTPServerResponse& response) const = 0;
+      HTTPServerResponse& response) = 0;
   /// Called before any content has been written to the response stream.
   /// Can be used to capture data needed for the page title before
   /// Actually writing to the response stream.
@@ -240,10 +297,10 @@ class AuthenticatedRequestHandler : public BaseAuthenticatedRequestHandler {
 protected:
   virtual void do_handle_request(
       const HTTPServerRequest& request,
-      HTTPServerResponse& response) const override;
+      HTTPServerResponse& response) override;
   virtual void handle_authenticated_request(
       const HTTPServerRequest& request,
-      HTTPServerResponse& response) const = 0;
+      HTTPServerResponse& response) = 0;
   virtual void do_preview_request(
       const HTTPServerRequest& request,
       HTTPServerResponse& response) = 0;
@@ -268,7 +325,7 @@ protected:
   virtual std::string get_user_id_by_email(std::string email) const = 0;
   virtual void do_handle_request(
       const fdsd::web::HTTPServerRequest& request,
-      fdsd::web::HTTPServerResponse& response) const override;
+      fdsd::web::HTTPServerResponse& response) override;
 public:
   HTTPLoginRequestHandler(std::string uri_prefix) :
     BaseAuthenticatedRequestHandler(uri_prefix) {}
@@ -278,7 +335,7 @@ class HTTPLogoutRequestHandler : public SessionAwareRequestHandler {
 protected:
   virtual void do_handle_request(
       const fdsd::web::HTTPServerRequest& request,
-      fdsd::web::HTTPServerResponse& response) const override;
+      fdsd::web::HTTPServerResponse& response) override;
 public:
   HTTPLogoutRequestHandler(std::string uri_prefix) :
     SessionAwareRequestHandler(uri_prefix) {}
@@ -298,7 +355,7 @@ protected:
   }
   virtual void do_handle_request(
       const HTTPServerRequest& request,
-      HTTPServerResponse& response) const override;
+      HTTPServerResponse& response) override;
 public:
   HTTPNotFoundRequestHandler(std::string uri_prefix) :
     HTTPRequestHandler(uri_prefix) {}

@@ -420,6 +420,57 @@ void BaseRequestHandler::set_content_headers(HTTPServerResponse& response) const
   response.set_header("Cache-Control", "no-cache");
 }
 
+UserMessage BaseRequestHandler::get_message(std::string code) const
+{
+  UserMessage retval;
+  for (const auto& m : messages) {
+    if (m.code == code) {
+      retval = m;
+      break;
+    }
+  }
+  return retval;
+}
+
+void BaseRequestHandler::append_messages_as_html(std::ostream& os) const
+{
+  if (messages.size() == 0)
+    return;
+  for (const auto m : messages) {
+    os
+      << "  <div class=\"";
+    switch (m.type) {
+      case m.info:
+        os << "alert alert-info";
+        break;
+      case m.warn:
+        os << "alert alert-warning";
+        break;
+      case m.error:
+        os << "alert alert-danger";
+        break;
+      case m.success:
+        os << "alert alert-success";
+        break;
+      case m.light:
+        os << "alert alert-light";
+        break;
+      case m.dark:
+        os << "alert alert-dark";
+        break;
+      case m.primary:
+        os << "alert alert-primary";
+        break;
+      case m.secondary:
+        os << "alert alert-secondary";
+        break;
+    }
+    os
+      << "\" role=\"alert\">\n"
+      << m.message << "\n</div>\n";
+  }
+}
+
 void BaseRequestHandler::create_full_html_page_for_standard_response(
     HTTPServerResponse& response)
 {
@@ -614,7 +665,7 @@ void AuthenticatedRequestHandler::preview_request(
 
 void AuthenticatedRequestHandler::do_handle_request(
       const HTTPServerRequest& request,
-      HTTPServerResponse& response) const
+      HTTPServerResponse& response)
 {
   if (user_id.empty()) {
 
@@ -671,7 +722,7 @@ Logger HTTPLoginRequestHandler::logger("HTTPLoginRequestHandler",
 
 void HTTPLoginRequestHandler::do_handle_request(
     const HTTPServerRequest& request,
-    fdsd::web::HTTPServerResponse& response) const
+    fdsd::web::HTTPServerResponse& response)
 {
   if (request.method == HTTPMethod::get) {
     std::string redirect_uri = get_redirect_uri(request);
@@ -744,7 +795,7 @@ void HTTPLoginRequestHandler::do_handle_request(
 
 void HTTPLogoutRequestHandler::do_handle_request(
     const HTTPServerRequest& request,
-    fdsd::web::HTTPServerResponse& response) const
+    fdsd::web::HTTPServerResponse& response)
 {
   std::string session_id = request.get_cookie(get_session_id_cookie_name());
   get_session_manager()->invalidate_session(session_id);
@@ -765,7 +816,7 @@ Logger HTTPNotFoundRequestHandler::logger("HTTPNotFoundRequestHandler",
 
 void HTTPNotFoundRequestHandler::do_handle_request(
     const HTTPServerRequest& request,
-    HTTPServerResponse& response) const
+    HTTPServerResponse& response)
 {
   response.status_code = HTTPStatus::not_found;
   response.generate_standard_response(HTTPStatus::not_found);

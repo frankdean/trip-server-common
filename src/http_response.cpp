@@ -34,7 +34,6 @@ Logger HTTPServerResponse::logger("HTTPServerResponse",
 
 HTTPServerResponse::HTTPServerResponse() :
   headers(),
-  messages(),
   content(),
   keep_alive(false),
   status_code(HTTPStatus::ok)
@@ -194,52 +193,4 @@ void HTTPServerResponse::set_cookie(const std::string name, const std::string va
   // if (Application::verbose)
   //   std::cout << "Setting cookie to \"" << ss.str() << "\"\n";
   add_header("Set-Cookie", ss.str());
-}
-
-UserMessage HTTPServerResponse::get_message(std::string code) const
-{
-  UserMessage retval;
-  for (const auto& m : messages) {
-    if (m.code == code) {
-      retval = m;
-      break;
-    }
-  }
-  return retval;
-}
-
-void HTTPServerResponse::append_messages_as_html()
-{
-  if (messages.size() == 0)
-    return;
-  content << "<ul class=\"user-messages\">\n";
-  for (const auto m : messages) {
-    content
-      << "  <li class=\"user-message\"><span class=\"";
-    switch (m.type) {
-      case m.info:
-        content << "user-info-message";
-        break;
-      case m.warn:
-        content << "user-warn-message";
-        break;
-      case m.error:
-        content << "user-error-message";
-        break;
-    }
-    content
-      << "\">"
-      << m.message << "</span></li>\n";
-  }
-  content << "</ul>\n";
-}
-
-void HTTPServerResponse::create_error_page(std::string page_title)
-{
-  content
-    << "<h1>" << x(page_title) << "</h1>\n"
-    << "<div>\n";
-  append_messages_as_html();
-  content
-    << "</div>\n";
 }

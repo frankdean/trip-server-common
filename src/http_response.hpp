@@ -50,51 +50,12 @@ struct response_header {
   std::string value;
 };
 
-struct UserMessage {
-  /// The type of the error message.
-  enum Type {
-    info,
-    warn,
-    error
-  } type;
-  UserMessage()
-    :
-    UserMessage("", "", info)
-    {}
-  UserMessage(std::string message)
-    :
-    UserMessage(message, "", info)
-    {}
-  UserMessage(std::string message, Type type)
-    :
-    UserMessage(message, "", type)
-    {}
-  UserMessage(std::string message, std::string code)
-    :
-    UserMessage(message, code, info)
-    {}
-  UserMessage(std::string message, std::string code, Type type)
-    :
-    message(message),
-    code(code),
-    type(type)
-    {}
-  ~UserMessage()
-    {}
-  /// A code to identify retrieve a message, e.g. to display it against a
-  /// specific input field that is relevant to the error.
-  std::string code;
-  /// The message to display to the user.
-  std::string message;
-};
-
 class HTTPServerResponse {
 private:
   /// A vector containing name-value-pairs of Strings.  We cannot use a map
   /// for response headers as headers such as Set-Cookie may be specified
   /// multiple times in the response.
   std::vector<response_header> headers;
-  std::vector<UserMessage> messages;
   static utils::Logger logger;
 
 protected:
@@ -133,20 +94,6 @@ public:
     }
     return "";
   }
-  void add_message(UserMessage message) {
-    messages.push_back(message);
-  }
-  /**
-   * Fetches the message containing the passed identifier.  If the message
-   * does not exist, an info message type is returned with an empty code and
-   * message.
-   * @param string code the message identifier.
-   * @return the message identified by the passed code.
-   */
-  UserMessage get_message(std::string code) const;
-  // TODO - Move to Request Handler
-  virtual void append_messages_as_html();
-  virtual void create_error_page(std::string page_title);
 };
 
 } // namespace web
