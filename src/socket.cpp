@@ -239,7 +239,7 @@ void SocketHandler::close() const
   if (shutdown(m_fd, SHUT_WR) < 0) {
     logger << Logger::warn
            << std::this_thread::get_id()
-           << " Error shutting down socket for write: ("
+           << " Error shutting down socket " << m_fd << " for write: ("
            << errno << ") " << ::strerror(errno) << Logger::endl;
   }
 
@@ -446,27 +446,29 @@ std::string SocketHandler::read()
   // logger << Logger::debug
   //        << std::this_thread::get_id()
   //        << " Reading from file descriptor: " << m_fd << Logger::endl;
-  // It seems that even though ::poll() reports there is data to be read, it
-  // often blocks on Darwin unless we set non-blocking mode.
-  set_flag(m_fd, O_NONBLOCK);
+
+  // set_flag(m_fd, O_NONBLOCK);
   std::string request_body;
   char buffer[1024] = { 0 };
   int again = 0;
-  // There are some performance improvements by trying again a few times
-  // before delaying with thread sleeps.
-  const int again_before_sleep = 5;
-  // A sufficient limit on a Debian VM with a single CPU was about 50 without
-  // having errors under load testing.  A much higher limit should deal with
-  // most, if not all, latency issues.
-  const int again_limit = 100;
-  while (again <= again_limit) {
+  const int again_limit = 3;
+  int short_read_count = 0;
+  while (again < again_limit) {
     // std::cout << "reading max " << sizeof(buffer) << " bytes from socket\n";
     // logger << Logger::debug
     //        << "Reading buffer from socket " << m_fd << Logger::endl;
     int valread = ::read(m_fd, buffer, sizeof(buffer));
-    // logger << Logger::debug << "Read " << valread << " bytes" << Logger::endl;
+    // logger << Logger::debug << "Read " << valread << " bytes from socket "
+    //        << m_fd << Logger::endl;
     if (valread > 0) {
       // if (logger.is_level(Logger::debug)) {
+      //   if (short_read_count > 0) {
+      //     logger << Logger::debug
+      //            << std::this_thread::get_id()
+      //            << ' ' << short_read_count << " short block reads on socket "
+      //            << m_fd
+      //            << Logger::endl;
+      //   }
       //   logger << Logger::debug << "<< buffer >>" << Logger::endl;
       //   std::string sbuf(buffer, valread);
       //   DebugUtils::hex_dump(sbuf, std::clog);
@@ -474,17 +476,20 @@ std::string SocketHandler::read()
       // }
       request_body.append(buffer, valread);
       if (valread < sizeof(buffer)) {
+        short_read_count++;
+        // We occasionally see the number of bytes being read is less than the
+        // buffer size, but in fact there is actually more data to be read, so
+        // we must try again.
+        set_flag(m_fd, O_NONBLOCK);
         // logger << Logger::debug << "Buffer is empty on socket " << m_fd
         //        << Logger::endl;
-        // set_flag(m_fd, O_NONBLOCK);
-        // std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        // again++;
-        break;
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
       }
+      again = 0;
     } else if (valread == 0) {
       // logger << Logger::debug
       //        << std::this_thread::get_id()
-      //        << " Break - EOF" << Logger::endl;
+      //        << " Break - EOF on socket " << m_fd << Logger::endl;
       m_eof = true;
       break;
     } else if (valread == -1) {
@@ -492,29 +497,48 @@ std::string SocketHandler::read()
       //        << "errno: " << errno << " " << strerror(errno)
       //        << " on socket " << m_fd << Logger::endl;
       switch (errno) {
-        case EAGAIN:
-          // A little thread sleep helps the next ::read() succeed.
+        // case EWOULDBLOCK:
+        case EAGAIN: {
           // logger << Logger::debug
           //        << std::this_thread::get_id()
-          //        << "(read) EAGAIN on socket " << m_fd << Logger::endl;
-          // std::cout << "Sleeping a little (again)\n";
-          if (again > again_before_sleep)
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
-          again++;
+          //        << "(read) EAGAIN (x" << again << ") on socket " << m_fd
+          //        << Logger::endl;
+          if (short_read_count == 0) {
+            // logger << Logger::debug
+            //        << std::this_thread::get_id()
+            //        << " Sleeping a little x(" << again << ") on socket " << m_fd
+            //        << Logger::endl;
+            set_flag(m_fd, O_NONBLOCK);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            again++;
+          } else {
+            again = again_limit;
+          }
           break;
-        case EINTR:
+        }
+        case EINTR: {
           // logger << Logger::debug
           //        << std::this_thread::get_id()
           //        << "(read) EINTR on socket " << m_fd << Logger::endl;
           again = again_limit;
           break;
-        case EBADF:
+        }
+        case EBADF: {
           logger << Logger::warn << std::this_thread::get_id()
                  << " Bad file descriptor (EBADF)"
                  << " File descriptor: " << m_fd
                  << Logger::endl;
           again = again_limit;
           break;
+        }
+        case ETIMEDOUT: {
+          logger << Logger::warn << std::this_thread::get_id()
+                 << " Timeout (ETIMEDOUT)"
+                 << " File descriptor: " << m_fd
+                 << Logger::endl;
+          again = again_limit;
+          break;
+        }
         default:
           throw std::runtime_error("Unexpected error reading socket (" +
                                    std::to_string(errno) + ")");

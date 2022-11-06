@@ -84,30 +84,6 @@ bool Worker::handle_socket_read(fdsd::web::SocketHandler& socket_handler)
     //         << " Content-Length: " << content_length
     //         << Logger::endl;
 
-    if (content_length > 0) {
-
-      auto timeout = std::chrono::system_clock::now() +
-        std::chrono::milliseconds(10000);
-      while (request.content.size() < content_length &&
-             std::chrono::system_clock::now() < timeout && !stop_flag) {
-        // logger << Logger::debug
-        //         << std::this_thread::get_id()
-        //         << "Content-Length header: " << content_length
-        //         << " does not match actual content length of: "
-        //         << request.content.size()
-        //         << "\nContent: \"" << request.content << "\""
-        //         << Logger::endl;
-        std::string more = socket_handler.read();
-        if (more.size() > 0) {
-          // logger << Logger::debug
-          //         << std::this_thread::get_id()
-          //         << " appending " << more.size() << " bytes"
-          //         << Logger::endl;
-          request.content.append(more);
-        }
-      }
-    }
-
     // if (logger.is_level(Logger::debug) &&
     //     content_length >= 0 && request.content.size() != content_length) {
     //   logger << Logger::debug

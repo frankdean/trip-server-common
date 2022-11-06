@@ -96,30 +96,25 @@ typedef std::map<std::string, std::string> param_map;
 class HTTPServerRequest {
 private:
   bool _keep_alive;
+  std::map<std::string, std::string> post_params;
 public:
-  HTTPServerRequest()
-  : method(HTTPMethod::unknown),
-    user_id(),
-    content(),
-    uri("/"),
-    protocol(),
-    headers(),
-    query_params(),
-    _keep_alive(false) {}
   HTTPServerRequest(std::string http_request);
-  ~HTTPServerRequest() {}
   static std::map<std::string, HTTPMethod> request_methods;
   HTTPMethod method;
   std::string method_to_str() const;
-  std::map<std::string, std::string> get_post_params() const;
+  std::map<std::string, std::string> get_post_params() const {
+    return post_params;
+  }
+  void initialize_post_params();
   std::string get_post_param(std::string name) const {
-    std::map<std::string, std::string> post_params = get_post_params();
     auto search = post_params.find(name);
     if (search != post_params.end()) {
       return search->second;
     }
     return "";
   }
+  std::map<long, std::string>
+      extract_array_param_map(std::string array_name) const;
   std::string get_header(std::string name) const {
     for (const auto& i : headers) {
       std::string s = i.first;
@@ -134,6 +129,7 @@ public:
     // return "";
   }
   std::string user_id;
+  // The body content of the request, excluding headers etc.
   std::string content;
   std::string uri;
   std::string protocol;

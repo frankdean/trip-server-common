@@ -60,9 +60,29 @@ bool test_convert_tz_02()
   }
 }
 
+bool test_trim()
+{
+  const std::string head = "  \t\t  ";
+  const std::string tail = " \r\n\t   ";
+  const std::string expected("1 2   3 4 5");
+  const std::string test = head + expected + tail;
+  std::string left_test = test;
+  std::string right_test = test;
+  std::string all_test = test;
+  dao_helper::ltrim(left_test);
+  dao_helper::rtrim(right_test);
+  dao_helper::trim(all_test);
+  const bool retval =
+    left_test == expected + tail &&
+    right_test == head + expected &&
+    all_test == expected;
+  return retval;
+}
+
 int main(void)
 { return !(
       test_convert_tz_01()
       && test_convert_tz_02()
+      && test_trim()
     );
 }

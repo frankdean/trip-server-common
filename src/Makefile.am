@@ -39,7 +39,8 @@ example_SOURCES = \
 	worker.hpp
 
 check_PROGRAMS = test_uuid test_dao_helper test_date_utils test_file_utils \
-	test_uri_utils test_debug_utils test_pagination test_pool
+	test_uri_utils test_debug_utils test_pagination test_pool \
+	test_http_request
 test_uuid_SOURCES = test_uuid.cpp
 test_dao_helper_SOURCES = test_dao_helper.cpp date_utils.cpp date_utils.hpp \
 	logger.cpp logger.hpp
@@ -51,3 +52,5 @@ test_debug_utils_SOURCES = test_debug_utils.cpp
 test_pagination_SOURCES = test_pagination.cpp logger.cpp logger.hpp \
 	debug_utils.cpp debug_utils.hpp
 test_pool_SOURCES = test_pool.cpp
+test_http_request_SOURCES = test_http_request.cpp uri_utils.cpp uri_utils.hpp \
+	debug_utils.cpp debug_utils.hpp

@@ -61,6 +61,8 @@ namespace utils
   public:
     static const std::regex numeric_regex;
     // static const std::regex valid_yyyy_mm_dd_regex;
+    static const std::regex rfc822_regex;
+    static const std::regex asctime_regex;
     static const std::regex iso8601_regex;
     enum date_format {
       yyyy_mm_dd_hh_mm_ss,
@@ -79,6 +81,13 @@ namespace utils
     DateTime(std::chrono::system_clock::time_point);
     DateTime(int year, int month, int day,
              int hour = 0, int minute = 0, int second = 0);
+    std::string convert_rfc822_to_iso8601(const std::smatch &m,
+                                          std::string date);
+    std::string convert_asctime_to_iso8601(
+        const std::smatch &m, std::string date);
+    std::string convert_dd_mon_yyyy_hh_mm_ss_to_iso8601(
+        const std::smatch &m,
+        std::string date);
     void init(std::string);
     // void init(std::time_t);
     void set_time_t(std::time_t t);

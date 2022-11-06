@@ -34,7 +34,18 @@ const std::regex DateTime::numeric_regex = std::regex("-?[0-9]+(\\.{1})?([0-9]+)
 // const std::regex DateTime::valid_yyyy_mm_dd_regex =
 //   std::regex("[0-9]{1,4}[^0-9]{1}[0-9]{2}[^0-9]{1}[0-9]{2}.*");
 
+/// Regex for splitting RFC 822/1123 and RFC 850 formatted dates
+const std::regex DateTime::rfc822_regex =
+  std::regex("(\\D+), (\\d+)(?:-| )(\\D+)(?:-| )(\\d+) (\\d+):(\\d+):(\\d+) GMT");
+/// Regex for splitting ANSIC C's asctime() formatted date
+const std::regex DateTime::asctime_regex =
+  std::regex("(?:\\D+) (\\D+)\\s+(\\d+) (\\d+):(\\d+):(\\d+) (\\d+)");
+
+/// Regex for splitting ANSI C formatted date, required by RFC 1945 (HTTP/1.0)
+
+
 /// Regex for splitting ISO 8601 Date and Time strings
+/// e.g. 2022-10-31T12:36:09Z
 const std::regex DateTime::iso8601_regex =
   std::regex("([0-9]{4})-?([0-9]{2})-?([0-9]{2})"
              "(?:[T\\s]([0-9]{2}):?([0-9]{2}):?([0-9]{2})?([\\.,][0-9]+)?"
@@ -55,6 +66,103 @@ DateTime::DateTime(std::string date) : DateTime()
   init(date);
 }
 
+/**
+ * \param date a date formated as an Internet date,
+ * e.g. Mon, 31 Oct 2022 17:58:18 GMT
+ *
+ * \return the passed date in ISO8601 format (yyyy-mm-ddThh:mm:ss)
+ */
+std::string DateTime::convert_rfc822_to_iso8601(
+    const std::smatch &m, std::string date)
+{
+  try {
+    int year = std::stoi(m[4]);
+    // See section 5.1, 'Fixed Solution' RFC 2626 https://www.ietf.org/rfc/rfc2626.txt
+    if (year < 50) {
+      year += 2000;
+    } else if (year < 100) {
+      year += 1900;
+    }
+    std::ostringstream os1;
+    os1 << m[2] << ' ' << m[3] << ' ' << year << ' ' << m[5] << ':' << m[6] << ':' << m[7];
+    std::istringstream is(os1.str());
+    std::tm tm {};
+    is >> std::get_time(&tm, "%d %b %Y %T");
+    if (is.fail())
+      logger << Logger::debug << "Parsing of date failed" << Logger::endl;
+    std::ostringstream os;
+    os << std::put_time(&tm, "%FT%T");
+    date = os.str();
+  } catch (const std::invalid_argument& e) {
+    logger << Logger::debug
+           << "Error converting date: \""
+           << date
+           << "\": " << e.what() << Logger::endl;
+    datetime = std::chrono::system_clock::from_time_t(-1);
+  }
+  // The date should now be in the ISO 8601 format.
+  return date;
+}
+
+/**
+ * \param date a date formated as ANSI C's asctime() format
+ * e.g. Mon Oct 17:58:18 2022
+ *
+ * \return the passed date in ISO8601 format (yyyy-mm-ddThh:mm:ss)
+ */
+std::string DateTime::convert_asctime_to_iso8601(
+    const std::smatch &m, std::string date)
+{
+  try {
+    std::ostringstream os1;
+    os1 << m[2] << ' ' << m[1] << ' ' << m[6] << ' ' << m[3] << ':' << m[4] << ':' << m[5];
+    std::istringstream is(os1.str());
+    std::tm tm {};
+    is >> std::get_time(&tm, "%d %b %Y %T");
+    if (is.fail())
+      logger << Logger::debug << "Parsing of date failed" << Logger::endl;
+    std::ostringstream os;
+    os << std::put_time(&tm, "%FT%T");
+    date = os.str();
+  } catch (const std::invalid_argument& e) {
+    logger << Logger::debug
+           << "Error converting date: \""
+           << date
+           << "\": " << e.what() << Logger::endl;
+    datetime = std::chrono::system_clock::from_time_t(-1);
+  }
+  // The date should now be in the ISO 8601 format.
+  return date;
+}
+
+/**
+ * \param date a date formated as dd_mon_yyyy_hh_mm_ss
+ *
+ * \return the passed date in ISO8601 format (yyyy-mm-ddThh:mm:ss)
+ */
+std::string DateTime::convert_dd_mon_yyyy_hh_mm_ss_to_iso8601(
+    const std::smatch &m, std::string date)
+{
+  try {
+    std::istringstream is(date);
+    std::tm tm {};
+    is >> std::get_time(&tm, "%d %b %Y %T");
+    if (is.fail())
+      logger << Logger::debug << "Parsing of date failed" << Logger::endl;
+    std::ostringstream os;
+    os << std::put_time(&tm, "%FT%T");
+    date = os.str();
+  } catch (const std::invalid_argument& e) {
+    logger << Logger::debug
+           << "Error converting date: \""
+           << date
+           << "\": " << e.what() << Logger::endl;
+    datetime = std::chrono::system_clock::from_time_t(-1);
+  }
+  // The date should now be in the ISO 8601 format.
+  return date;
+}
+
 void DateTime::init(std::string date)
 {
   // std::cout << "DateTime converting \"" << date << "\"\n";
@@ -62,37 +170,31 @@ void DateTime::init(std::string date)
     set_ms(std::stol(date) * 1000);
     return;
   }
+  // Use regular expressions to determine the date format, then convert it to an
+  // intermediate ISO 8601 format, then finally to an internal date value.
   bool localtime = true;
   std::tm tm {};
   // The date should now be in the format similar to yyyy_mm_dd...
   std::smatch m;
 
   bool is_iso_8601 = std::regex_match(date, m, iso8601_regex);
-  // If not ISO 8601, try converting as dd_mon_yyyy_hh_mm_ss
-  if (!is_iso_8601) {
-    try {
-      // std::cout << "Converting \"" << date << "\" as dd_mon_yyyy_hh_mm_ss\n";
-      std::istringstream is(date);
-      is >> std::get_time(&tm, "%d %b %Y %T");
-      if (is.fail())
-        logger << Logger::debug << "Parsing of date failed" << Logger::endl;
-      std::ostringstream os;
-      os << std::put_time(&tm, "%FT%T");
-      date = os.str();
-    } catch (const std::invalid_argument& e) {
-      logger << Logger::debug
-             << "Error converting date: \""
-             << date
-             << "\": " << e.what() << Logger::endl;
-      datetime = std::chrono::system_clock::from_time_t(-1);
-    }
-    // The date should now be in the ISO 8601 format.
-    // Redo the regex match
+  // If not ISO 8601, try first try converting as Internet format
+  if (!is_iso_8601 && std::regex_match(date, m, rfc822_regex)) {
+    date = convert_rfc822_to_iso8601(m, date);
     is_iso_8601 = std::regex_match(date, m, iso8601_regex);
   }
-
+  // If not ISO 8601, then try converting as ANSI C's asctime() format
+  if (!is_iso_8601 && std::regex_match(date, m, asctime_regex)) {
+    date = convert_asctime_to_iso8601(m, date);
+    is_iso_8601 = std::regex_match(date, m, iso8601_regex);
+  }
+  // If not ISO 8601, then try converting as dd_mon_yyyy_hh_mm_ss
+  if (!is_iso_8601) {
+    date = convert_dd_mon_yyyy_hh_mm_ss_to_iso8601(m, date);
+    is_iso_8601 = std::regex_match(date, m, iso8601_regex);
+  }
+  // Convert ISO 8601 formatted date into internal value.
   if (is_iso_8601) {
-    // std::cout << "Converting date: \"" << date << "\"\n";
     double fraction = 0;
     double zone_hours = 0;
     // try {

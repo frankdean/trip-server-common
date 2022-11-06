@@ -262,6 +262,8 @@ std::string addrinfo_result_type::to_string() const
 
 GetAddrInfo::GetAddrInfo(std::string host, std::string port) : addresses()
 {
+  this->host = host;
+  this->port = port;
   struct addrinfo hint;
   int err;
   memset(&hint, 0, sizeof(hint));
@@ -310,8 +312,10 @@ int GetAddrInfo::connect()
 
     close(sfd);
   }
-  if (rp == nullptr)
-    throw std::runtime_error("Failed to connect");
-
+  if (rp == nullptr) {
+    std::ostringstream os;
+    os << "Failed to connect to host: " << host << ", port " << port;
+    throw ConnectionFailure(os.str());
+  }
   return sfd;
 }

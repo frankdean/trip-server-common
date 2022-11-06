@@ -22,10 +22,12 @@
 #ifndef DAO_HELPER_HPP
 #define DAO_HELPER_HPP
 
+#include <algorithm>
 #include <chrono>
 #include <ctime>
 #include <map>
 #include <string>
+#include <vector>
 
 namespace fdsd {
 namespace utils {
@@ -58,10 +60,32 @@ struct dao_helper {
   std::time_t get_date(
       const std::map<std::string, std::string> &params,
       std::string key) const;
-  std::string date_as_html_input_value(std::time_t time) const;
+  static std::string date_as_html_input_value(std::time_t time);
+  static std::string date_as_html_input_value(std::chrono::system_clock::time_point tp) {
+    return date_as_html_input_value(std::chrono::system_clock::to_time_t(tp));
+  }
+  static std::string datetime_as_html_input_value(std::time_t time);
+  static std::string datetime_as_html_input_value(std::chrono::system_clock::time_point tp) {
+    return datetime_as_html_input_value(std::chrono::system_clock::to_time_t(tp));
+  }
   static std::time_t convert_libpq_date(std::string date);
   static std::chrono::system_clock::time_point
       convert_libpq_date_tz(std::string date);
+  static inline void ltrim(std::string &s) {
+    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
+      return !std::isspace(ch);
+    }));
+  }
+  static inline void rtrim(std::string &s) {
+    s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
+      return !std::isspace(ch);
+    }).base(), s.end());
+  }
+  static inline void trim(std::string &s) {
+    ltrim(s);
+    rtrim(s);
+  }
+  static std::string to_sql_array(std::vector<long> v);
 };
 
 } // namespace utils

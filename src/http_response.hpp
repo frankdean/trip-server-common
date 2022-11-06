@@ -38,6 +38,7 @@ bool istr_compare(const std::string& s1, const std::string& s2);
   ok = 200,
   found = 302,
   see_other = 303,
+  not_modified = 304,
   bad_request = 400,
   unauthorized = 401,
   forbidden = 403,
@@ -73,7 +74,7 @@ public:
   virtual void generate_standard_response(HTTPStatus code);
   /// Returns the current body, wrapped with status code and HTTP headers.
   virtual void get_http_response_message(std::ostream& os) const;
-  virtual void add_etag_header();
+  virtual std::string add_etag_header();
   std::string get_status_message(HTTPStatus code) const;
   void set_cookie(std::string name, std::string value, int max_age = -1);
   /// Sets a header, replacing any header of the same name

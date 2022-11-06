@@ -180,7 +180,15 @@ std::time_t dao_helper::get_date(
   return std::time_t(nullptr);
 }
 
-std::string dao_helper::date_as_html_input_value(std::time_t time) const
+std::string dao_helper::date_as_html_input_value(std::time_t time)
+{
+  std::ostringstream os;
+  os.imbue(std::locale("C"));
+  os << std::put_time(std::localtime(&time), "%F");
+  return os.str();
+}
+
+std::string dao_helper::datetime_as_html_input_value(std::time_t time)
 {
   std::ostringstream os;
   os.imbue(std::locale("C"));
@@ -203,4 +211,16 @@ std::chrono::system_clock::time_point
 {
   DateTime retval(date);
   return retval.time_tp();
+}
+
+std::string dao_helper::to_sql_array(std::vector<long> v)
+{
+  std::string retval("{");
+  for (const auto &i : v) {
+    if (i != v.front())
+      retval.append(",");
+    retval.append(std::to_string(i));
+  }
+  retval.append("}");
+  return retval;
 }

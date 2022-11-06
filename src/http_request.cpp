@@ -20,6 +20,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include "http_request.hpp"
+// #include "debug_utils.hpp"
 #include "http_response.hpp"
 #include "uri_utils.hpp"
 #include <cassert>
@@ -29,9 +30,11 @@
 #include <iomanip>
 #include <locale>
 #include <map>
+// #include <regex>
 #include <sstream>
 
 using namespace fdsd::web;
+using namespace fdsd::utils;
 
 bool fdsd::web::istr_compare_predicate(unsigned char a, unsigned char b)
 {
@@ -61,7 +64,7 @@ HTTPServerRequest::HTTPServerRequest(std::string http_request)
   //           << http_request
   //           << "<<<<"
   //           << std::endl;
-  // std::cout << "Current content before: \"" << content << "\"\n";
+  // DebugUtils::hex_dump(http_request, std::clog);
   std::istringstream in(http_request);
   // std::stringstream b;
   std::string s;
@@ -132,8 +135,8 @@ HTTPServerRequest::HTTPServerRequest(std::string http_request)
 #endif
     }
   } // while
-  // content = b.str();
   // std::cout << "Body: " << content << "\n\nEnd\n";
+  initialize_post_params();
 }
 
 std::map<std::string, HTTPMethod> HTTPServerRequest::request_methods = {
@@ -169,15 +172,24 @@ std::string HTTPServerRequest::method_to_str() const
   return "Unknown";
 }
 
-std::map<std::string, std::string> HTTPServerRequest::get_post_params() const {
-  std::map<std::string, std::string> retval;
-  std::vector<std::string> query_params = UriUtils::split_params(content, "&");
-  UriUtils u;
-  for (std::string qp : query_params) {
-    auto nv = UriUtils::split_pair(qp, "=");
-    retval[u.uri_decode(nv.first)] = u.uri_decode(nv.second);
+void HTTPServerRequest::initialize_post_params()
+{
+  // post_params = std::unique_ptr<std::map<std::string, std::string>>(
+  //     new std::map<std::string, std::string>);
+  if (method == HTTPMethod::post || method == HTTPMethod::put) {
+    if (!content.empty()) {
+      // std::cout << "Initializing post parameters\n";
+      std::vector<std::string> params = UriUtils::split_params(content, "&");
+      UriUtils u;
+      for (std::string p : params) {
+        auto nv = UriUtils::split_pair(p, "=");
+        post_params[u.uri_decode(nv.first)] = u.uri_decode(nv.second);
+        // std::cout << "Init post params: \"" << u.uri_decode(nv.first) << "\" -> \"" << nv.second << "\"\n";
+      }
+    // } else {
+    //   std::cout << "No body content, not initializing post parameters\n";
+    }
   }
-  return retval;
 }
 
 std::string HTTPServerRequest::get_cookie(const std::string cookie_name) const {
@@ -202,4 +214,75 @@ std::string HTTPServerRequest::get_cookie(const std::string cookie_name) const {
       return nv.second;
   }
   return "";
+}
+
+/**
+ * Helps simulate posting an array of parameters with names styled with a name
+ * and square brackets, e.g. `my_name[1]`, `my_name[2]` etc.  This method
+ * extracts a map of the post parameters matching that pattern with the passed
+ * name, e.g. passing `my_name` would return a map as { {1, `my_first_value`},
+ * {2, `my_second_value`} }
+ *
+ * \param array_name the name of the array style parameters
+ *
+ * \return a map of parameters matching array_name[n] with a key of n and the
+ * corresponding post parameter value.
+ *
+ * \throws std::out_of_range if the numeric key value is too big to be stored as
+ * an int
+ *
+ * \throws std::invalid_argument if the value denoted by square brackets cannot
+ * be converted to an int
+ */
+std::map<long, std::string>
+    HTTPServerRequest::extract_array_param_map(std::string array_name) const
+{
+  std::map<long, std::string> result_map;
+
+  // Using regular expressions does not work reliably on macOS with Clang -
+  // seems to be a bug when constructing the regular expression.  Works fine
+  // using a staticly defined regex, but otherwise just fails to match at
+  // runtime even though the same code passes unit tests.
+
+  // try {
+  //   const std::string expression = array_name + "\\[(\\d+)\\]";
+  //   std::cout << "Regex: \"" << expression << "\"\n";
+  //   const std::regex regex(expression);
+  //   for (const auto &p : post_params) {
+  //     std::smatch m;
+  //     const std::string target = p.first;
+  //     std::cout << "Checking target \"" << target << "\" -> \"" << p.second << "\"\n";
+  //     if (std::regex_match(target, m, regex)) {
+  //       std::cout << "There are " << m.size() << " matches \"" << m[0] << "\n";
+  //       for (auto x = 0; x < m.size(); x++) {
+  //         std::cout << "  submatch " << x << ": \"" << m[x] << "\"\n";
+  //       }
+  //       const int i = std::stoi(m[1]);
+  //       std::cout << "Matched " << i << " \"" << m[1] << "\" with \"" << p.second << "\"\n";
+  //       result_map[i] = p.second;
+  //     } else {
+  //       std::cout << "No match\n";
+  //     }
+  //   }
+  // } catch (const std::regex_error &e) {
+  //   std::cerr << "Exception extracting array from parameter map: "
+  //             << e.what() << '\n';
+  //   throw;
+  // }
+
+  for (const auto &p : post_params) {
+    const std::string target = p.first;
+    const std::string start_match = array_name + "[";
+    if (target.find(start_match) == 0) {
+      const auto len = start_match.size();
+      const auto end = target.find(']', len);
+      if (end != std::string::npos) {
+        const std::string index = target.substr(len, end - len);
+        const long i = std::stol(index);
+        result_map[i] = p.second;
+      }
+    }
+  }
+
+  return result_map;
 }

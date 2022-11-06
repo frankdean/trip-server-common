@@ -172,18 +172,41 @@ void FileRequestHandler::append_body_content(
   std::ifstream cin(full_path);
   // if (cin)
   response.content << cin.rdbuf();
-  response.add_etag_header();
+  const std::string new_etag = response.add_etag_header();
   // Set the Last-Modified header with the file's timestamp
   auto file_info = FileUtils::get_file_details(full_path);
+
+  const std::string request_etag = request.get_header("If-None-Match");
+  if (request_etag.empty() && (
+          request.method == HTTPMethod::get ||
+          request.method == HTTPMethod::head)) {
+    const std::string if_modified_since = request.get_header("If-Modified-Since");
+    if (!if_modified_since.empty()) {
+      DateTime if_modified_since_date(if_modified_since);
+      std::cout << "If modified since: \"" << if_modified_since
+                << "\" converted to: \"" << if_modified_since_date << "\"\n";
+      std::cout << "Comparing with file datetime: " << file_info.datetime << '\n';
+      if (!(if_modified_since_date < file_info.datetime)) {
+        response.status_code = HTTPStatus::not_modified;
+        return;
+      }
+    }
+  }
+  response.set_header("Cache-Control", "no-cache");
   response.set_header("Last-Modified", file_info.datetime.get_time_as_rfc7231());
-  response.set_header("Content-Type", get_mime_type(FileUtils::get_extension(full_path)));
-  set_content_headers(response);
+  if (!request_etag.empty() && new_etag == request_etag) {
+    response.content.clear();
+    response.content.str("");
+    response.status_code = HTTPStatus::not_modified;
+  } else {
+    response.set_header("Content-Type", get_mime_type(FileUtils::get_extension(full_path)));
+    set_content_headers(response);
+  }
 }
 
 void FileRequestHandler::set_content_headers(HTTPServerResponse& response) const
 {
   // Content-Type is set in append_body_content() as we do not know mime type here
-  response.set_header("Cache-Control", "no-cache");
   response.set_header("Content-Length", std::to_string(response.content.str().length()));
 }
 
@@ -521,7 +544,10 @@ void HTTPRequestHandler::handle_request(
            << Logger::endl;
   }
   preview_request(request, response);
-  if (response.status_code != HTTPStatus::found) {
+  if (response.status_code != HTTPStatus::found &&
+      response.status_code != HTTPStatus::bad_request &&
+      response.status_code != HTTPStatus::internal_server_error
+    ) {
     append_doc_type(response.content);
     append_html_start(response.content);
     append_head_start(response.content);
@@ -536,24 +562,37 @@ void HTTPRequestHandler::handle_request(
            << response.status_code << Logger::endl;
     try {
       do_handle_request(request, response);
+      logger << Logger::debug
+             << "Status code after do_handle_request "
+             << response.status_code << Logger::endl;
+      if (response.status_code != HTTPStatus::found) {
+        append_footer_content(response.content);
+        append_pre_body_end(response.content);
+        append_body_end(response.content);
+        append_html_end(response.content);
+        set_content_headers(response);
+      }
     } catch (const BadRequestException &e) {
+      std::cerr << "BadRequestException occurred handling request: "
+            << e.what() << '\n';
       handle_bad_request(request, response);
     } catch (const std::invalid_argument &e) {
+      std::cerr << "std::invalid_argument exception occurred handling request: "
+                << e.what() << '\n';
       handle_bad_request(request, response);
     } catch (const std::out_of_range &e) {
+      std::cerr << "std::out_of_range exception occurred handling request: "
+                << e.what() << '\n';
       handle_bad_request(request, response);
+    } catch (const std::exception &e) {
+      std::cerr << "std::exception exception occurred handling request: "
+                << e.what() << '\n';
+      response.content.clear();
+      response.content.str("");
+      response.status_code = HTTPStatus::internal_server_error;
+      create_full_html_page_for_standard_response(response);
     }
-    logger << Logger::debug
-           << "Status code after do_handle_request "
-           << response.status_code << Logger::endl;
-    if (response.status_code != HTTPStatus::found) {
-      append_footer_content(response.content);
-      append_pre_body_end(response.content);
-      append_body_end(response.content);
-      append_html_end(response.content);
-      set_content_headers(response);
-    }
-  }
+   }
   logger << Logger::debug
          << "Finished handle_request"
          << Logger::endl;
@@ -648,19 +687,36 @@ void AuthenticatedRequestHandler::preview_request(
       const HTTPServerRequest& request,
       HTTPServerResponse& response)
 {
-  // Skip, if the user isn't logged in.
-  // Will fail in AuthenticatedRequestHandler::do_handle_request().
-  session_id = request.get_cookie(get_session_id_cookie_name());
-  user_id = get_session_manager()->get_session_user_id(session_id);
+  try {
+    // Skip, if the user isn't logged in.
+    // Will fail in AuthenticatedRequestHandler::do_handle_request().
+    session_id = request.get_cookie(get_session_id_cookie_name());
+    user_id = get_session_manager()->get_session_user_id(session_id);
 
-  if (logger.is_level(Logger::debug))
-    logger << Logger::debug
-           << "Got session ID: \"" << session_id << "\" from request cookie.  "
-           << "The session ID belongs to user ID \""
-           << user_id << '"' << Logger::endl;
+    if (logger.is_level(Logger::debug))
+      logger << Logger::debug
+             << "Got session ID: \"" << session_id << "\" from request cookie.  "
+             << "The session ID belongs to user ID \""
+             << user_id << '"' << Logger::endl;
 
-  if (!user_id.empty())
-    do_preview_request(request, response);
+    if (!user_id.empty())
+      do_preview_request(request, response);
+  } catch (const std::invalid_argument &e) {
+    std::cerr << "std::invalid_argument exception occurred previewing request: "
+              << e.what() << '\n';
+    handle_bad_request(request, response);
+  } catch (const std::out_of_range &e) {
+    std::cerr << "std::out_of_range exception occurred previewing request: "
+              << e.what() << '\n';
+    handle_bad_request(request, response);
+  } catch (const std::exception &e) {
+    std::cerr << "std::exception exception occurred previewing request: "
+              << e.what() << '\n';
+    response.content.clear();
+    response.content.str("");
+    response.status_code = HTTPStatus::internal_server_error;
+    create_full_html_page_for_standard_response(response);
+  }
 }
 
 void AuthenticatedRequestHandler::do_handle_request(

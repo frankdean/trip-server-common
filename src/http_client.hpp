@@ -87,12 +87,25 @@ struct addrinfo_result_type {
 /// Wrapper to getaddrinfo to ensure freeaddrinfo is called even after
 /// exception etc.
 class GetAddrInfo {
+  std::string host;
+  std::string port;
   struct addrinfo *infop = nullptr;
 public:
   GetAddrInfo(std::string host, std::string port);
   ~GetAddrInfo();
   int connect();
   std::vector<addrinfo_result_type> addresses;
+  class ConnectionFailure : public std::exception {
+  private:
+    std::string message;
+  public:
+    ConnectionFailure(std::string message) {
+      this->message = message;
+    }
+    virtual const char* what() const throw() override {
+      return message.c_str();
+    }
+  };
 };
 
 } // namespace trip

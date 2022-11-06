@@ -223,7 +223,7 @@ public:
   }
   virtual void do_handle_request(
         const HTTPServerRequest& request,
-        HTTPServerResponse& response) const override;
+        HTTPServerResponse& response) override;
 };
 
 const std::string ExampleRequestHandler::default_url = "";
@@ -240,7 +240,7 @@ void ExampleRequestHandler::append_head_content(std::ostream& os) const
 
 void ExampleRequestHandler::do_handle_request(
     const HTTPServerRequest& request,
-    HTTPServerResponse& response) const
+    HTTPServerResponse& response)
 {
   response.content
     <<
@@ -387,7 +387,7 @@ protected:
       HTTPServerResponse& response) override {}
   virtual void handle_authenticated_request(
       const HTTPServerRequest& request,
-      HTTPServerResponse& response) const override;
+      HTTPServerResponse& response) override;
 public:
   ExampleAuthenticatedRequestHandler(std::string uri_prefix) :
     AuthenticatedRequestHandler(uri_prefix) {}
@@ -405,7 +405,7 @@ public:
 
 void ExampleAuthenticatedRequestHandler::handle_authenticated_request(
       const HTTPServerRequest& request,
-      HTTPServerResponse& response) const
+      HTTPServerResponse& response)
 {
   response.content
     << "<h1>Successfully logged in!</h1>\n"

@@ -390,6 +390,64 @@ bool test_get_time_as_iso8601_gmt_04()
   return retval;
 }
 
+bool test_parse_iso8601_gmt()
+{
+  const long test_ms = 1665315662100; // Sunday, 9 October 2022 11:41:02.100
+  const DateTime dt{
+      std::chrono::time_point<std::chrono::system_clock>(
+          std::chrono::milliseconds(test_ms))};
+  const std::string iso8601_str = dt.get_time_as_iso8601_gmt();
+  const DateTime iso8601 = DateTime(iso8601_str);
+  const bool retval = iso8601.get_ms() == test_ms;
+  if (!retval) {
+    std::cout << "test_parse_iso8601_gmt() failed\n"
+              << "Expected: \"" << iso8601_str
+              << "\" but was \"" << iso8601.get_time_as_iso8601_gmt() << '\n';
+  }
+  return retval;
+}
+
+bool test_parse_rfc822()
+{
+  const long test_ms = 1667215374000; // Mon, 31 Oct 2022 11:22:54 GMT
+  const std::string test_str("Mon, 31 Oct 2022 11:22:54 GMT");
+  const DateTime result = DateTime(test_str);
+  const bool retval = result.get_ms() == test_ms;
+  if (!retval) {
+    std::cout << "test_parse_rfc822() failed\n"
+              << "Expected: \"" << test_str
+              << "\n\" but was \"" << result.get_time_as_iso8601_gmt() << '\n';
+  }
+  return retval;
+}
+
+bool test_parse_rfc850()
+{
+  const long test_ms = 1667215374000; // Mon, 31 Oct 2022 11:22:54 GMT
+  const std::string test_str("Monday, 31-Oct-22 11:22:54 GMT");
+  const DateTime result = DateTime(test_str);
+  const bool retval = result.get_ms() == test_ms;
+  if (!retval) {
+    std::cout << "test_parse_rfc850() failed\n"
+              << "Expected: \"" << test_str
+              << "\n\" but was \"" << result.get_time_as_iso8601_gmt() << '\n';
+  }
+  return retval;
+}
+
+bool test_parse_ansi_c_date()
+{
+  const long test_ms = 1667215374000; // Mon, 31 Oct 2022 11:22:54 GMT
+  const std::string test_str("Mon Oct 31 11:22:54 2022");
+  const DateTime result = DateTime(test_str);
+  const bool retval = result.get_ms() == test_ms;
+  if (!retval) {
+    std::cout << "test_parse_ansi_c_date() failed\n"
+              << "Expected: \"" << test_str
+              << "\n\" but was \"" << result.get_time_as_iso8601_gmt() << '\n';
+  }
+  return retval;
+}
 
 bool assert_match(
     const std::vector<std::smatch> &matches,
@@ -576,6 +634,10 @@ int main(void)
         && test_negative_time_zone_same_day()
         && test_time_zone_previous_day()
         && test_time_zone_next_day()
+        && test_parse_iso8601_gmt()
+        && test_parse_rfc822()
+        && test_parse_rfc850()
+        && test_parse_ansi_c_date()
       );
   } catch (const std::exception &e) {
     std::cout << "test_date_utils failed with exception: "

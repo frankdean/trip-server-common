@@ -218,7 +218,7 @@ file_details FileUtils::get_file_details(std::string path)
     auto sctp = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
         lwt - ft_now + sc_now);
 
-    retval.datetime = DateTime(std::chrono::system_clock::to_time_t(sctp));
+    retval.datetime = DateTime(sctp);
 
     retval.type = FileUtils::get_type(std::filesystem::status(p).type());
   } catch (const std::filesystem::filesystem_error& e) {
@@ -230,7 +230,8 @@ file_details FileUtils::get_file_details(std::string path)
   if (stat(path.c_str(), &s) == 0) {
     retval.size = s.st_size;
     DateTime dt;
-    dt.set_ms(s.st_mtime);
+    // s.st_mtime last modified time as seconds since epoch
+    dt.set_time_t(s.st_mtime);
     retval.datetime = dt;
     retval.type = get_type(s);
   } else {

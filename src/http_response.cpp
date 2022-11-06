@@ -76,7 +76,7 @@ std::string HTTPServerResponse::x(std::string s)
         retval.append("&quot;");
         break;
       case '\'':
-        retval.append("&#039");
+        retval.append("&#039;");
         break;
       default:
         retval.push_back(*i);
@@ -97,6 +97,9 @@ std::string HTTPServerResponse::get_status_message(HTTPStatus code) const
       break;
     case HTTPStatus::see_other:
       message.append("See Other");
+      break;
+    case HTTPStatus::not_modified:
+      message.append("Not Modified");
       break;
     case HTTPStatus::bad_request:
       message.append("Bad Request");
@@ -129,10 +132,12 @@ void HTTPServerResponse::generate_standard_response(HTTPStatus code)
   content << "    <p>HTTP " << code << " &ndash; " << get_status_message(code) << "</p>\n";
 }
 
-void HTTPServerResponse::add_etag_header()
+std::string HTTPServerResponse::add_etag_header()
 {
   auto hash = std::hash<std::string>{}(content.str());
-  set_header("Etag", std::to_string(hash));
+  const std::string etag = std::to_string(hash);
+  set_header("Etag", etag);
+  return etag;
 }
 
 void HTTPServerResponse::get_http_response_message(std::ostream& os) const
