@@ -72,6 +72,7 @@ protected:
   virtual void session_updated(std::string session_id, const Session& session) const {}
 public:
   SessionManager() : sessions(), session_mutex() {}
+  virtual ~SessionManager() {}
   static void set_session_manager(fdsd::web::SessionManager* session_manager);
   static fdsd::web::SessionManager* get_session_manager();
   std::pair<bool, std::string> get_user_id_for_session(const std::string& session_id);

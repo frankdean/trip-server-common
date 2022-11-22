@@ -249,31 +249,36 @@ bool test_encode_rfc_1738()
 
 int main(void)
 {
-  const int retval =
-    !(
-        test_encode_rfc_1738()
-        && test_invalid_uri()
-        && test_not_url_form_encoded()
-        && test_simple_uri()
-        && test_reserved_characters()
-        && test_utf8_characters()
-        && test_form_decoded_plus_sign_01()
-        && test_form_decoded_plus_sign_02()
-        && test_get_account_query_params()
-        && test_get_empty_query_params()
-        && test_get_null_query_params()
-        && test_get_two_query_params()
-        && test_get_three_query_params()
-        && test_get_invalid_query_params_01()
-        && test_get_invalid_query_params_02()
-        && test_get_invalid_query_params_03()
-        && test_get_invalid_query_params_04()
-        && test_get_query_params_multiple_query_separators()
-        && test_encode_single_reserved_character()
-        && test_encode_unreserved_character()
-        && test_encode_all_unreserved_and_reserved_characters()
-        && test_form_encoded_space()
-        && test_encode_all_unreserved_and_reserved_characters_form_encoded()
-      );
-  return retval;
+  try {
+    const int retval =
+      !(
+          test_encode_rfc_1738()
+          && test_invalid_uri()
+          && test_not_url_form_encoded()
+          && test_simple_uri()
+          && test_reserved_characters()
+          && test_utf8_characters()
+          && test_form_decoded_plus_sign_01()
+          && test_form_decoded_plus_sign_02()
+          && test_get_account_query_params()
+          && test_get_empty_query_params()
+          && test_get_null_query_params()
+          && test_get_two_query_params()
+          && test_get_three_query_params()
+          && test_get_invalid_query_params_01()
+          && test_get_invalid_query_params_02()
+          && test_get_invalid_query_params_03()
+          && test_get_invalid_query_params_04()
+          && test_get_query_params_multiple_query_separators()
+          && test_encode_single_reserved_character()
+          && test_encode_unreserved_character()
+          && test_encode_all_unreserved_and_reserved_characters()
+          && test_form_encoded_space()
+          && test_encode_all_unreserved_and_reserved_characters_form_encoded()
+        );
+    return retval;
+  } catch (const std::exception &e) {
+    std::cerr << "Tests failed with: " << e.what() << '\n';
+    return 1;
+  }
 }

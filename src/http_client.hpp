@@ -37,6 +37,7 @@ namespace web {
 bool istr_compare(const std::string& s1, const std::string& s2);
 
 struct HttpOptions {
+  virtual ~HttpOptions() {}
   std::map<std::string, std::string> headers;
   std::string protocol = "http:";
   std::string host = "localhost";

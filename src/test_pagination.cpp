@@ -560,25 +560,30 @@ bool test_get_html_large_page_numbers()
 
 int main(void)
 {
-  return !(
-      test_get_html()
-      && test_get_html_button_count_1_page()
-      && test_get_html_button_count_3_pages()
-      && test_page_count()
-      && test_offset_00()
-      && test_offset_01()
-      && test_offset_02()
-      && test_offset_03()
-      && test_get_next_page_01()
-      && test_get_next_page_02()
-      && test_get_previous_page_00()
-      && test_get_previous_page_01()
-      && test_get_previous_page_02()
-      && test_get_next_previous_page()
-      && test_set_total()
-      && test_get_last_page_plus_one()
-      && test_get_html_02()
-      && test_get_html_03()
-      && test_get_html_large_page_numbers()
-    );
+  try {
+    return !(
+        test_get_html()
+        && test_get_html_button_count_1_page()
+        && test_get_html_button_count_3_pages()
+        && test_page_count()
+        && test_offset_00()
+        && test_offset_01()
+        && test_offset_02()
+        && test_offset_03()
+        && test_get_next_page_01()
+        && test_get_next_page_02()
+        && test_get_previous_page_00()
+        && test_get_previous_page_01()
+        && test_get_previous_page_02()
+        && test_get_next_previous_page()
+        && test_set_total()
+        && test_get_last_page_plus_one()
+        && test_get_html_02()
+        && test_get_html_03()
+        && test_get_html_large_page_numbers()
+      );
+  } catch (const std::exception &e) {
+    std::cerr << "Tests failed with: " << e.what() << '\n';
+    return 1;
+  }
 }

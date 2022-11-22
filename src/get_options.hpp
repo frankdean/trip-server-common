@@ -50,6 +50,7 @@ struct GetOptions
     }
   };
   GetOptions() {}
+  virtual ~GetOptions() {}
   bool init(int argc, char* argv[]);
   std::string config_filename;
   virtual void show_version_info() const;

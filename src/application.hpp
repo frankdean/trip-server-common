@@ -55,7 +55,7 @@ public:
   Application(std::string listen_address,
               std::string port,
               std::string locale = "");
-  ~Application();
+  virtual ~Application();
   std::string get_config_value(std::string key, std::string default_value="");
   std::string document_root;
   virtual void initialize_locale(std::string locale_str) const;

@@ -51,14 +51,20 @@ bool fdsd::web::istr_compare(std::string const& s1, std::string const& s2)
 }
 
 HTTPServerRequest::HTTPServerRequest(std::string http_request)
-  : method(HTTPMethod::unknown),
+  :
+    multipart_state(multipart_state_type::ready),
+    boundary_key(),
+    current_part(),
+    _keep_alive(false),
+    post_params(),
+    method(HTTPMethod::unknown),
+    content_type(ContentType::unknown),
     user_id(),
     content(),
     uri("/"),
     protocol(),
     headers(),
-    query_params(),
-    _keep_alive(false)
+    query_params()
 {
   // std::cout << ">>>>\n"
   //           << http_request
@@ -123,8 +129,7 @@ HTTPServerRequest::HTTPServerRequest(std::string http_request)
           }
         } else {
           // body
-          // std::cout << "\nAdding \"" << s << "\" to content\n";
-          content += s;
+          handle_content_line(s);
         }
       }
     } catch (std::ios_base::failure& e) {
@@ -135,8 +140,6 @@ HTTPServerRequest::HTTPServerRequest(std::string http_request)
 #endif
     }
   } // while
-  // std::cout << "Body: " << content << "\n\nEnd\n";
-  initialize_post_params();
 }
 
 std::map<std::string, HTTPMethod> HTTPServerRequest::request_methods = {
@@ -172,23 +175,134 @@ std::string HTTPServerRequest::method_to_str() const
   return "Unknown";
 }
 
-void HTTPServerRequest::initialize_post_params()
+void HTTPServerRequest::handle_multipart_form_data(const std::string &s)
 {
-  // post_params = std::unique_ptr<std::map<std::string, std::string>>(
-  //     new std::map<std::string, std::string>);
-  if (method == HTTPMethod::post || method == HTTPMethod::put) {
-    if (!content.empty()) {
-      // std::cout << "Initializing post parameters\n";
-      std::vector<std::string> params = UriUtils::split_params(content, "&");
-      UriUtils u;
-      for (std::string p : params) {
-        auto nv = UriUtils::split_pair(p, "=");
-        post_params[u.uri_decode(nv.first)] = u.uri_decode(nv.second);
-        // std::cout << "Init post params: \"" << u.uri_decode(nv.first) << "\" -> \"" << nv.second << "\"\n";
+  // std::cout << "Figuring out what to do with \"" << s << "\"\n";
+  const bool is_boundary = (s == "--" + boundary_key);
+  // if (is_boundary)
+  //   std::cout << "Is a boundary string\n";
+  switch (multipart_state) {
+    case ready:
+      // std::cout << "Starting header\n";
+      multipart_state = header;
+      break;
+    case header:
+      // std::cout << "Handling as a header line\n";
+      if (s.empty()) {
+        // std::cout << "Changed state to body\n";
+        multipart_state = body;
+      } else {
+        const auto n = s.find(": ");
+        if (n != std::string::npos) {
+          const std::string key = s.substr(0, n);
+          std::string value = s.size() > n+2 ? s.substr(n+2) : "";
+          // std::cout << "local header: \"" << key << "\" -> \"" << value << "\"\n";
+          current_part.headers[key] = value;
+        // } else {
+        //   std::cout << "Failed to find header key in header line: \"" << s << "\"\n";
+        }
       }
-    // } else {
-    //   std::cout << "No body content, not initializing post parameters\n";
+      break;
+    case body:
+      const bool is_terminating_boundary = (s == "--" + boundary_key + "--");
+      // if (is_terminating_boundary)
+      //   std::cout << "Is a terminating boundary string\n";
+      if (is_boundary || is_terminating_boundary) {
+        // TODO - need to do case-insignificant search of headers
+        const std::string content_disposition = current_part.headers["Content-Disposition"];
+        // TODO figure out name from headers
+        std::string name;
+        if (!content_disposition.empty()) {
+          std::vector<std::string> elements = UriUtils::split_params(content_disposition, ";");
+          for (auto &ele : elements) {
+            if (ele.front() == ' ')
+              ele.erase(0, 1);
+            // std::cout << ">:\"" << ele << "\"\n";
+            const auto p = UriUtils::split_pair(ele, "=");
+            if (p.first == "name") {
+              name = p.second;
+              if (name.front() == '"')
+                name.erase(name.begin());
+              if (name.back() == '"')
+                name.erase(name.end() -1);
+            }
+          }
+        }
+        if (!name.empty()) {
+          try {
+            // TODO - need to do case-insignificant search of headers
+            const std::string type = current_part.headers.at("Content-Type");
+            // std::cout << "MULTIPART CONTENT TYPE: \"" << type << "\" BODY: \"" << current_part.body << "\"\n";
+            multiparts[name] = current_part;
+          } catch (const std::out_of_range &e) {
+            // Handle as a standard post parameter
+            post_params[name] = current_part.body;
+          }
+        } else {
+          std::cerr << "Warning: could not find a name for the disposition content\n";
+        }
+        current_part.body.clear();
+        current_part.headers.clear();
+        multipart_state = header;
+      } else {
+        // std::cout << "Appending to body\n";
+        if(!current_part.body.empty())
+          current_part.body.push_back('\n');
+        current_part.body.append(s);
+      }
+      break;
+  }
+}
+
+void HTTPServerRequest::handle_x_www_form_urlencoded(const std::string &s)
+{
+  const std::vector<std::string> params = UriUtils::split_params(s, "&");
+  UriUtils u;
+  for (const std::string &p : params) {
+    const auto nv = UriUtils::split_pair(p, "=");
+    post_params[u.uri_decode(nv.first)] = u.uri_decode(nv.second);
+    // std::cout << "handle_x_www_form_urlencoded: \"" << u.uri_decode(nv.first) << "\" -> \"" << nv.second << "\"\n";
+  }
+}
+
+void HTTPServerRequest::handle_content_line(const std::string &s)
+{
+  if (content_type == ContentType::unknown) {
+    const std::string type = get_header("content-type");
+    if (type.find("multipart/form-data") != std::string::npos) {
+      content_type = ContentType::multipart_form_data;
+      // std::cout << "Have a multipart form with type: \"" << type << "\"\n";
+      std::vector<std::string> elements = UriUtils::split_params(type, ";");
+      for (const auto &ele : elements) {
+        // std::cout << "Element: \"" << ele << "\"\n";
+        auto parts = UriUtils::split_pair(ele, "=");
+        // std::cout << "Part \"" << parts.first << "\" -> \"" << parts.second << "\"\n";
+        if (parts.first.front() == ' ')
+          parts.first.erase(0, 1);
+        if (parts.first == "boundary") {
+          boundary_key = parts.second;
+          // std::cout << "Boundary set to: \"" << boundary_key << "\"\n";
+        }
+      }
+    } else if (type.find("application/x-www-form-urlencoded") != std::string::npos) {
+      content_type = ContentType::x_www_form_urlencoded;
+    } else if (type.empty()) {
+      std::cerr << "Content type is not specified\n";
+    } else {
+      std::cerr << "Warning: cannot determine content type from type \""
+                << type << "\"\n";
     }
+  }
+  switch (content_type) {
+    case ContentType::multipart_form_data:
+      handle_multipart_form_data(s);
+      break;
+    case ContentType::x_www_form_urlencoded:
+      handle_x_www_form_urlencoded(s);
+      break;
+    case ContentType::unknown:
+      content += s;
+      break;
   }
 }
 

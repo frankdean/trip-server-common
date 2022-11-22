@@ -259,12 +259,17 @@ std::vector<dir_entry> FileUtils::get_directory(std::string path)
   dir_entry dot_dot(fd);
   dot_dot.name = "..";
   retval.push_back(dot_dot);
-
-  for (auto const& de : std::filesystem::directory_iterator(path)) {
-    file_details fd = get_file_details(de.path());
-    dir_entry e(fd);
-    e.name = de.path().filename();
-    retval.push_back(e);
+  try {
+    for (auto const& de : std::filesystem::directory_iterator(path)) {
+      file_details fd = get_file_details(de.path());
+      dir_entry e(fd);
+      e.name = de.path().filename();
+      retval.push_back(e);
+    }
+  } catch (const std::filesystem::filesystem_error &e) {
+    std::cerr << "Exception reading directory: "
+              << e.what() << '\n';
+    throw DirectoryAccessFailedException(path);
   }
 #else
   DIR *dir;

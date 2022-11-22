@@ -67,9 +67,14 @@ bool test_exhausting_pool()
 int main(void)
 {
 #ifdef HAVE_PQXX_CONFIG_PUBLIC_COMPILER_H
-  return !(
-      test_exhausting_pool()
-    );
+  try {
+    return !(
+        test_exhausting_pool()
+      );
+  } catch (const std::exception &e) {
+    std::cerr << "Tests failed with: " << e.what() << '\n';
+    return 1;
+  }
 #else
   return 0;
 #endif // HAVE_PQXX_CONFIG_PUBLIC_COMPILER_H

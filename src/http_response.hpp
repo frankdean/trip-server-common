@@ -62,7 +62,7 @@ private:
 protected:
 public:
   HTTPServerResponse();
-  ~HTTPServerResponse() {}
+  virtual ~HTTPServerResponse() {}
   std::string gmt() const;
   /// Escapes string with HTML entities
   static std::string x(std::string s);

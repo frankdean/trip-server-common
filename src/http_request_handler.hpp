@@ -208,6 +208,7 @@ protected:
   virtual void set_content_headers(HTTPServerResponse& response) const override;
 public:
   CssRequestHandler(std::string uri_prefix) : BaseRequestHandler(uri_prefix) {}
+  virtual ~CssRequestHandler() {}
   virtual void handle_request(
       const HTTPServerRequest& request,
       HTTPServerResponse& response) override;
@@ -232,6 +233,7 @@ public:
                      std::string document_root)
     : BaseRequestHandler(uri_prefix),
       document_root(document_root) {}
+  virtual ~FileRequestHandler() {}
   virtual void handle_request(
       const HTTPServerRequest& request,
       HTTPServerResponse& response) override;
@@ -261,6 +263,7 @@ protected:
       HTTPServerResponse& response) {}
 public:
   HTTPRequestHandler(std::string uri_prefix) : BaseRequestHandler(uri_prefix) {}
+  virtual ~HTTPRequestHandler() {}
   virtual void handle_request(
         const HTTPServerRequest& request,
         HTTPServerResponse& response) override;
@@ -276,6 +279,7 @@ protected:
 public:
   SessionAwareRequestHandler(std::string uri_prefix) :
     HTTPRequestHandler(uri_prefix) {}
+  virtual ~SessionAwareRequestHandler() {}
 };
 
 class BaseAuthenticatedRequestHandler : public SessionAwareRequestHandler {
@@ -284,6 +288,7 @@ protected:
 public:
   BaseAuthenticatedRequestHandler(std::string uri_prefix) :
     SessionAwareRequestHandler(uri_prefix) {}
+  virtual ~BaseAuthenticatedRequestHandler() {}
 };
 
 /// Ensures user is authorised before calling handler method.
@@ -315,6 +320,7 @@ public:
     BaseAuthenticatedRequestHandler(uri_prefix),
     session_id(),
     user_id() {}
+  virtual ~AuthenticatedRequestHandler() {}
 };
 
 class HTTPLoginRequestHandler : public BaseAuthenticatedRequestHandler {
@@ -329,6 +335,7 @@ protected:
 public:
   HTTPLoginRequestHandler(std::string uri_prefix) :
     BaseAuthenticatedRequestHandler(uri_prefix) {}
+  virtual ~HTTPLoginRequestHandler() {}
 };
 
 class HTTPLogoutRequestHandler : public SessionAwareRequestHandler {
@@ -339,6 +346,7 @@ protected:
 public:
   HTTPLogoutRequestHandler(std::string uri_prefix) :
     SessionAwareRequestHandler(uri_prefix) {}
+  virtual ~HTTPLogoutRequestHandler() {}
 //   virtual std::unique_ptr<HTTPRequestHandler> clone() const override {
 //     return std::make_unique<HTTPLogoutRequestHandler>(*this);
 //   }
@@ -359,6 +367,7 @@ protected:
 public:
   HTTPNotFoundRequestHandler(std::string uri_prefix) :
     HTTPRequestHandler(uri_prefix) {}
+  virtual ~HTTPNotFoundRequestHandler() {}
   virtual std::string get_handler_name() const override {
     return "HTTPNotFoundRequestHandler";
   }

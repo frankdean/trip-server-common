@@ -91,6 +91,7 @@ public:
              bool show_first_last = true,
              bool show_prev_next = true,
              std::string page_number_query_param_key = "page");
+  virtual ~Pagination() {}
   std::string get_html() const;
   virtual void get_html(std::ostream& os) const;
   void append_page_url(std::ostream& os, std::uint32_t page_number) const;

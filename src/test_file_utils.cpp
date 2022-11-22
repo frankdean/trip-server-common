@@ -243,25 +243,30 @@ bool test_get_extension_html()
 
 int main(void)
 {
-  return !(
-      test_strip_prefix_01()
-      && test_strip_prefix_02()
-      && test_strip_prefix_03()
-      && test_strip_prefix_04()
-      && test_strip_prefix_05()
-      && test_strip_prefix_06()
-      && test_strip_prefix_07()
-      && test_strip_prefix_08()
-      && test_strip_prefix_09()
-      && test_strip_prefix_10()
-      && test_strip_query_params_none()
-      && test_strip_query_params_only_query_param()
-      && test_strip_query_params_empty_query_params()
-      && test_strip_query_params_with_query_params()
-      && test_get_extension_none()
-      && test_get_extension_null()
-      && test_get_extension_null_string()
-      && test_get_extension()
-      && test_get_extension_html()
-    );
+  try {
+    return !(
+        test_strip_prefix_01()
+        && test_strip_prefix_02()
+        && test_strip_prefix_03()
+        && test_strip_prefix_04()
+        && test_strip_prefix_05()
+        && test_strip_prefix_06()
+        && test_strip_prefix_07()
+        && test_strip_prefix_08()
+        && test_strip_prefix_09()
+        && test_strip_prefix_10()
+        && test_strip_query_params_none()
+        && test_strip_query_params_only_query_param()
+        && test_strip_query_params_empty_query_params()
+        && test_strip_query_params_with_query_params()
+        && test_get_extension_none()
+        && test_get_extension_null()
+        && test_get_extension_null_string()
+        && test_get_extension()
+        && test_get_extension_html()
+      );
+  } catch (const std::exception &e) {
+    std::cerr << "Tests failed with: " << e.what() << '\n';
+    return 1;
+  }
 }

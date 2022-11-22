@@ -64,6 +64,39 @@ const std::string test_bad_post_body =
   "nickname0%5D=Fred&nickname%5B24=admin&foo=&nickname%5B%5D=bar"
   "&action=activate&nickname%5B99%5D=test";
 
+const std::string test_post_file =
+  "POST /trip2/app/itinerary/upload HTTP/1.1\r\n"
+  "Host: localhost:8080\r\n"
+  "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\n"
+  "Accept-Encoding: gzip, deflate\r\n"
+  "Accept-Language: en-GB,en;q=0.9\r\n"
+  "Content-Type: multipart/form-data; boundary=----TestBoundaryString\r\n"
+  "Origin: http://localhost:8080\r\n"
+  "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15\r\n"
+  "Connection: keep-alive\r\n"
+  "Upgrade-Insecure-Requests: 1\r\n"
+  "Referer: http://localhost:8080/trip2/app/itinerary/upload\r\n"
+  "Content-Length: 405\r\n"
+  "Cookie: TRIP_SESSION_ID=e61198f8-b7c5-42df-a34f-5dd3affe79aa\r\n"
+  "\r\n"
+  "------TestBoundaryString\r\n"
+  "Content-Disposition: form-data; name=\"id\"\r\n"
+  "\r\n"
+  "7\r\n"
+  "------TestBoundaryString\r\n"
+  "Content-Disposition: form-data; name=\"file\"; filename=\"test.txt\"\r\n"
+  "Content-Type: text/plain\r\n"
+  "\r\n"
+  "first line\r\n"
+  "second line\r\n"
+  "third line\r\n"
+  "\r\n"
+  "------TestBoundaryString\r\n"
+  "Content-Disposition: form-data; name=\"action\"\r\n"
+  "\r\n"
+  "upload\r\n"
+  "------TestBoundaryString--\r\n";
+
 bool extract_array_from_post_params_test1()
 {
   bool retval = true;
@@ -167,12 +200,68 @@ bool test_get_header_case_insignificant()
   return retval;
 }
 
+bool test_form_upload()
+{
+  bool retval = true;
+    
+  try {
+    HTTPServerRequest request(test_post_file);
+    retval = request.headers.size() == 12;
+    if (retval)
+      retval = request.get_post_params().size() == 2;
+    const auto mps = request.multiparts;
+    if (retval)
+      retval = mps.size() == 1;
+    try {
+      const auto mp = mps.at("file");
+      if (retval)
+        retval = mp.headers.size() == 2;
+      if (retval)
+        retval = !mp.body.empty();
+    } catch (const std::out_of_range &e) {
+      std::cerr << "Exception in test_form_upload: " << e.what() << '\n';
+      retval = false;
+    }
+    if (retval)
+      retval = request.get_post_params()["action"] == "upload";
+    if (retval)
+      retval = request.get_post_params()["id"] == "7";
+    if (!retval) {
+      std::cerr << "Failed test in test_form_upload()\n";
+      std::cerr << request.headers.size() << " headers:\n";
+      for (const auto &h : request.headers) {
+        std::cerr << "header: \"" << h.first << "\" -> \"" << h.second << "\"\n";
+      }
+      for (const auto &h : request.get_post_params()) {
+        std::cerr << "param: \"" << h.first << "\" -> \"" << h.second << "\"\n";
+      }
+      for (const auto &m : request.multiparts) {
+        std::cerr << "Multipart: \"" << m.first << "\"\n";
+        for (const auto &h : m.second.headers) {
+          std::cerr << "local header: \"" << h.first << "\" -> \"" << h.second << "\"\n";
+        }
+        std::cerr << "Multipart body: \"" << m.second.body << "\"\n";
+      }
+    }
+  } catch (const std::exception &e) {
+    std::cerr << "Exception during test_form_upload(): "
+              << e.what() << '\n';
+  }
+  return retval;
+}
+
 int main(void)
 {
-  return !(
-      extract_array_from_post_params_test1() &&
-      extract_array_from_post_params_test2() &&
-      test_get_header() &&
-      test_get_header_case_insignificant()
-    );
+  try {
+    return !(
+        extract_array_from_post_params_test1() &&
+        extract_array_from_post_params_test2() &&
+        test_get_header() &&
+        test_get_header_case_insignificant() &&
+        test_form_upload()
+      );
+  } catch (const std::exception &e) {
+    std::cerr << "Tests failed with: " << e.what() << '\n';
+    return 1;
+  }
 }

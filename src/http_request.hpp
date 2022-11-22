@@ -89,23 +89,52 @@ protected:
   }
 public:
   my_money_put(std::string local_name) : std::money_put<char_type>(), name(local_name) {}
+  virtual ~my_money_put() {}
 };
 
 typedef std::map<std::string, std::string> param_map;
 
 class HTTPServerRequest {
+public:
+  struct multipart_type {
+    std::map<std::string, std::string> headers;
+    std::string body;
+  };
+  enum ContentType {
+    x_www_form_urlencoded,
+    multipart_form_data,
+    unknown
+  };
+
 private:
+  enum multipart_state_type {
+    ready,
+    header,
+    body
+  };
+  /// Used when parsing a multipart form
+  multipart_state_type multipart_state;
+  /// The key marking the multipart form parts
+  std::string boundary_key;
+  /// Holds the current multipart form part during parsing
+  multipart_type current_part;
   bool _keep_alive;
   std::map<std::string, std::string> post_params;
+  void handle_multipart_form_data(const std::string &s);
+  void handle_x_www_form_urlencoded(const std::string &s);
+protected:
+  void handle_content_line(const std::string &s);
 public:
   HTTPServerRequest(std::string http_request);
   static std::map<std::string, HTTPMethod> request_methods;
   HTTPMethod method;
+  ContentType content_type;
+  /// Multipart form elements, keyed by name
+  std::map<std::string, multipart_type> multiparts;
   std::string method_to_str() const;
   std::map<std::string, std::string> get_post_params() const {
     return post_params;
   }
-  void initialize_post_params();
   std::string get_post_param(std::string name) const {
     auto search = post_params.find(name);
     if (search != post_params.end()) {

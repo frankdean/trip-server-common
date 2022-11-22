@@ -110,14 +110,19 @@ bool test_hex_dump()
 
 int main(void)
 {
-  const int retval =
-    !(
-        test_hex_dump()
-        && test_hex_dump_30()
-        && test_hex_dump_31()
-        && test_hex_dump_32()
-        && test_hex_dump_33()
-        && test_hex_dump_34()
-      );
-  return retval;
+  try {
+    const int retval =
+      !(
+          test_hex_dump()
+          && test_hex_dump_30()
+          && test_hex_dump_31()
+          && test_hex_dump_32()
+          && test_hex_dump_33()
+          && test_hex_dump_34()
+        );
+    return retval;
+  } catch (const std::exception &e) {
+    std::cerr << "Tests failed with: " << e.what() << '\n';
+    return 1;
+  }
 }

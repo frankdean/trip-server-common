@@ -56,11 +56,16 @@ bool test_valid_uuid()
 
 int main(void)
 {
-  return !(
-      test_length()
-      && test_uniqueness()
-      && test_valid_uuid()
-      && test_invalid_uuid()
-      && test_uuid_invalid_length()
-    );
+  try {
+    return !(
+        test_length()
+        && test_uniqueness()
+        && test_valid_uuid()
+        && test_invalid_uuid()
+        && test_uuid_invalid_length()
+      );
+  } catch (const std::exception &e) {
+    std::cerr << "Tests failed with: " << e.what() << '\n';
+    return 1;
+  }
 }

@@ -47,6 +47,7 @@ private:
   static fdsd::utils::Logger logger;
 public:
   HTTPRequestFactory(std::string uri_prefix);
+  virtual ~HTTPRequestFactory() {}
   virtual std::unique_ptr<BaseRequestHandler>
       create_request_handler(HTTPServerRequest &request,
                              HTTPServerResponse& response) const;

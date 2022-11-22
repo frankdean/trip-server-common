@@ -80,9 +80,15 @@ bool test_trim()
 }
 
 int main(void)
-{ return !(
-      test_convert_tz_01()
-      && test_convert_tz_02()
-      && test_trim()
-    );
+{
+  try {
+    return !(
+        test_convert_tz_01()
+        && test_convert_tz_02()
+        && test_trim()
+      );
+  } catch (const std::exception &e) {
+    std::cerr << "Tests failed with: " << e.what() << '\n';
+    return 1;
+  }
 }
