@@ -86,6 +86,7 @@ struct dao_helper {
     rtrim(s);
   }
   static std::string to_sql_array(std::vector<long> v);
+  static std::string to_sql_array(std::vector<std::string> v);
 };
 
 } // namespace utils

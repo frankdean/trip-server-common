@@ -79,6 +79,57 @@ bool test_trim()
   return retval;
 }
 
+bool test_to_sql_array_strings_01()
+{
+  const std::string expected = "{\"Test1\"}";
+  std::vector<std::string> v;
+  v.push_back("Test1");
+  const std::string result = dao_helper::to_sql_array(v);
+  const bool retval = result == expected;
+  if (!retval) {
+    std::cerr << "test_to_sql_array_strings_01() failed, "
+              << "expected \"" << expected << "\", but was \""
+              << result << "\"\n";
+  }
+  return retval;
+}
+
+bool test_to_sql_array_strings_02()
+{
+  const std::string expected = "{\"Test1\",\"Test2\"}";
+  std::vector<std::string> v;
+  v.push_back("Test1");
+  v.push_back("Test2");
+  const std::string result = dao_helper::to_sql_array(v);
+  const bool retval = result == expected;
+  if (!retval) {
+    std::cerr << "test_to_sql_array_strings_02() failed, "
+              << "expected \"" << expected << "\", but was \""
+              << result << "\"\n";
+  }
+  return retval;
+}
+
+bool test_to_sql_array_strings_03()
+{
+  const std::string expected = "{\"Test1\",\"Test2\",\"Test3\",\"dodgy''nickname''with\\\"quoted\\\"stuff\",\"Test4\",\"Test5\"}";
+  std::vector<std::string> v;
+  v.push_back("Test1");
+  v.push_back("Test2");
+  v.push_back("Test3");
+  v.push_back("dodgy'nickname'with\"quoted\"stuff");
+  v.push_back("Test4");
+  v.push_back("Test5");
+  const std::string result = dao_helper::to_sql_array(v);
+  const bool retval = result == expected;
+  if (!retval) {
+    std::cerr << "test_to_sql_array_strings_03() failed, "
+              << "expected \"" << expected << "\", but was \""
+              << result << "\"\n";
+  }
+  return retval;
+}
+
 int main(void)
 {
   try {
@@ -86,6 +137,9 @@ int main(void)
         test_convert_tz_01()
         && test_convert_tz_02()
         && test_trim()
+        && test_to_sql_array_strings_01()
+        && test_to_sql_array_strings_02()
+        && test_to_sql_array_strings_03()
       );
   } catch (const std::exception &e) {
     std::cerr << "Tests failed with: " << e.what() << '\n';

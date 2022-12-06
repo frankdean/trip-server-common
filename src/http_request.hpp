@@ -103,6 +103,7 @@ public:
   enum ContentType {
     x_www_form_urlencoded,
     multipart_form_data,
+    application_json,
     unknown
   };
 

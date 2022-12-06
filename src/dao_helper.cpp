@@ -224,3 +224,17 @@ std::string dao_helper::to_sql_array(std::vector<long> v)
   retval.append("}");
   return retval;
 }
+
+std::string dao_helper::to_sql_array(std::vector<std::string> v)
+{
+  std::string retval("{");
+  for (const auto &i : v) {
+    if (i != v.front())
+      retval.append(",");
+    std::string s = std::regex_replace(i, std::regex("'"), "''");
+    s = std::regex_replace(s, std::regex("\""), "\\\"");
+    retval.append("\"").append(s).append("\"");
+  }
+  retval.append("}");
+  return retval;
+}

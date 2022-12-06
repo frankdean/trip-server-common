@@ -286,6 +286,8 @@ void HTTPServerRequest::handle_content_line(const std::string &s)
       }
     } else if (type.find("application/x-www-form-urlencoded") != std::string::npos) {
       content_type = ContentType::x_www_form_urlencoded;
+    } else if (type.find("application/json") != std::string::npos) {
+      content_type = ContentType::application_json;
     } else if (type.empty()) {
       std::cerr << "Content type is not specified\n";
     } else {
@@ -300,6 +302,7 @@ void HTTPServerRequest::handle_content_line(const std::string &s)
     case ContentType::x_www_form_urlencoded:
       handle_x_www_form_urlencoded(s);
       break;
+    case ContentType::application_json:
     case ContentType::unknown:
       content += s;
       break;
