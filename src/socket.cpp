@@ -485,6 +485,10 @@ std::string SocketHandler::read()
         //        << Logger::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
       }
+      // The socket read blocks (observed with Chrome) when the data exactly
+      // matches the buffer size, so play safe and set non-blocking mode for all
+      // subsequent reads.
+      set_flag(m_fd, O_NONBLOCK);
       again = 0;
     } else if (valread == 0) {
       // logger << Logger::debug
@@ -497,7 +501,8 @@ std::string SocketHandler::read()
       //        << "errno: " << errno << " " << strerror(errno)
       //        << " on socket " << m_fd << Logger::endl;
       switch (errno) {
-        // case EWOULDBLOCK:
+        // case EWOULDBLOCK: <-- Same value as EAGAIN.  Both defined in include
+        // files for portability
         case EAGAIN: {
           // logger << Logger::debug
           //        << std::this_thread::get_id()

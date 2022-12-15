@@ -21,11 +21,9 @@
 */
 #include "../config.h"
 #include "get_options.hpp"
-#include "application.hpp"
 #include <iostream>
 
 using namespace fdsd::utils;
-using namespace fdsd::web;
 
 #ifdef HAVE_GETOPT_H
 
