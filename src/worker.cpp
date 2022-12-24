@@ -53,13 +53,15 @@ bool Worker::handle_socket_read(fdsd::web::SocketHandler& socket_handler)
   //         << std::this_thread::get_id()
   //         << " Reading request"
   //         << Logger::endl;
-  std::string request_body = socket_handler.read();
-  if (request_body.size() > 0) {
+  HTTPServerRequest request;
+  try {
+    socket_handler.read(request);
+    // if (request.content.size() > 0) {
     // logger << Logger::debug << "Request size of " << request_body.size()
     //         << " bytes\n"
     //         << "<< body >>\n" << request_body << "\n<< end of body >>\n"
     //         << Logger::endl;
-    HTTPServerRequest request(request_body);
+    // HTTPServerRequest request(request_body);
     // logger << Logger::debug
     //         << "\n<< content >>\n"
     //         << request.content
@@ -73,7 +75,7 @@ bool Worker::handle_socket_read(fdsd::web::SocketHandler& socket_handler)
         content_length = std::stoi(s);
     } catch (const std::invalid_argument& e) {
       logger << Logger::debug << std::this_thread::get_id()
-              << " Invalid content length header" << Logger::endl;
+             << " Invalid content length header" << Logger::endl;
     } catch (const std::out_of_range& e) {
       // logger << Logger::debug
       //         << std::this_thread::get_id()
@@ -131,10 +133,27 @@ bool Worker::handle_socket_read(fdsd::web::SocketHandler& socket_handler)
     //         << "After sending response"
     //         << Logger::endl;
     return true;
+    // }
+
+    // logger << Logger::debug
+    //         << std::this_thread::get_id()
+    //         << " Empty request" << Logger::endl;
+
+  } catch (const PayloadTooLarge &e) {
+    auto response = request_factory->create_response_object();
+    auto handler =
+      request_factory->create_request_handler(request, *response);
+    // std::cout << "handler: " << handler->get_handler_name() << '\n';
+    response->content.clear();
+    response->content.str("");
+    response->status_code = HTTPStatus::payload_too_large;
+    handler->create_full_html_page_for_standard_response(*response);
+    std::ostringstream response_message;
+    response->get_http_response_message(response_message);
+    socket_handler.send(response_message);
+    // Give plenty of time for the response to be sent before closing the socket
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
   }
-  // logger << Logger::debug
-  //         << std::this_thread::get_id()
-  //         << " Empty request" << Logger::endl;
   return false;
 }
 
@@ -157,7 +176,9 @@ void Worker::run() {
       }
       lock.unlock();
       if (fd >= 0) {
-        fdsd::web::SocketHandler handler(fd);
+        fdsd::web::SocketHandler handler(
+            fd,
+            request_factory->get_maximum_request_size());
 #ifdef ENABLE_KEEP_ALIVE
         if (handle_socket_read(handler) && keep_alive && !stop_flag) {
           // logger << Logger::debug << std::this_thread::get_id()

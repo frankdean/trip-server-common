@@ -39,6 +39,7 @@ Logger HTTPRequestFactory::logger("HTTPRequestFactory", std::clog, Logger::info)
  */
 HTTPRequestFactory::HTTPRequestFactory(std::string uri_prefix)
   : uri_prefix(uri_prefix),
+    maximum_request_size(1024 * 1024 * 12),
     pre_login_handlers(),
     post_login_handlers()
 {

@@ -133,8 +133,6 @@ protected:
    */
   UserMessage get_message(std::string code) const;
   virtual void append_messages_as_html(std::ostream& os) const;
-  void create_full_html_page_for_standard_response(
-      HTTPServerResponse& response);
   virtual void handle_bad_request(const HTTPServerRequest& request,
                                   HTTPServerResponse& response);
   /**
@@ -198,6 +196,8 @@ public:
       const HTTPServerRequest& request,
       HTTPServerResponse& response) = 0;
   std::string get_mime_type(std::string extension) const;
+  void create_full_html_page_for_standard_response(
+      HTTPServerResponse& response);
 };
 
 class CssRequestHandler : public BaseRequestHandler {

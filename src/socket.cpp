@@ -20,9 +20,12 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include "../config.h"
+#include "http_request.hpp"
 #include "socket.hpp"
 #include "debug_utils.hpp"
+#include "uri_utils.hpp"
 #include <arpa/inet.h>
+#include <chrono>
 #include <errno.h>
 #include <fcntl.h>
 #include <iostream>
@@ -36,7 +39,11 @@
 using namespace fdsd::utils;
 using namespace fdsd::web;
 
+#ifdef DEBUG_SOCKET_CPP
+Logger SocketUtils::logger("socket", std::clog, fdsd::utils::Logger::debug);
+#else
 Logger SocketUtils::logger("socket", std::clog, fdsd::utils::Logger::info);
+#endif
 
 Socket::Socket(std::string listen_address, std::string port)
   :
@@ -126,7 +133,7 @@ bool Socket::have_connection()
 /**
  * Uses poll to wait for a connection on the socket.
  * \param timeout timeout in milliseconds
- * \return the socket file descriptro if there is a connection on this socket,
+ * \return the socket file descriptor if there is a connection on this socket,
  * waiting to be read, -1 if there is an error or a timeout occurred.
  */
 int Socket::wait_connection(int timeout)
@@ -262,13 +269,14 @@ void SocketHandler::close() const
 #endif
                  (void *)&linger,
                  sizeof(linger)) != 0) {
+#ifdef DEBUG_SOCKET_CPP
     logger << Logger::debug
            << std::this_thread::get_id()
            << " Failure setting SO_LINGER socket option: "
            << ::strerror(errno)
            << Logger::endl;
+#endif // DEBUG_SOCKET_CPP
   }
-
   try {
     // std::this_thread::sleep_for(std::chrono::milliseconds(10000));
     if (::close(m_fd) < 0)
@@ -293,9 +301,22 @@ bool SocketHandler::is_more_data_to_read(int timeout) const
   poll_fd.revents = 0;
   struct pollfd fdinfo[1] = { { 0 } };
   fdinfo[0] = poll_fd;
+#ifdef DEBUG_SOCKET_CPP
+  auto start = std::chrono::system_clock::now();
+#endif // DEBUG_SOCKET_CPP
   int nfds = poll(fdinfo,
                   1,
                   timeout);
+#ifdef DEBUG_SOCKET_CPP
+  auto finish = std::chrono::system_clock::now();
+  if (logger.is_level(Logger::debug)) {
+    std::chrono::duration<double, std::milli> diff = finish - start;
+    if (diff.count() > 200)
+      logger << Logger::debug
+             << "Timeout after " << diff.count() << "ms"
+             << Logger::endl;
+  }
+#endif // DEBUG_SOCKET_CPP
   if (nfds >= 0) {
     // std::cout << "There are " << nfds
     //           << " (read) ready file descriptors "
@@ -303,19 +324,25 @@ bool SocketHandler::is_more_data_to_read(int timeout) const
 
 #ifdef __linux__
     if (fdinfo[0].revents & POLLRDHUP) {
-      logger
-        << Logger::debug
-        << std::this_thread::get_id()
-        << " Warning socket disconnected by client (checking if more to read)"
-        << Logger::endl;
+#ifdef DEBUG_SOCKET_CPP
+      if (logger.is_level(Logger::debug))
+        logger
+          << Logger::debug
+          << std::this_thread::get_id()
+          << " Warning socket disconnected by client (checking if more to read)"
+          << Logger::endl;
+#endif // DEBUG_SOCKET_CPP
       return false;
     }
 #endif
     if (fdinfo[0].revents & POLLHUP) {
-      logger << Logger::debug
-             << std::this_thread::get_id()
-             << " Peer closed its channel, while checking if more to read"
-             << Logger::endl;
+#ifdef DEBUG_SOCKET_CPP
+      if (logger.is_level(Logger::debug))
+        logger << Logger::debug
+               << std::this_thread::get_id()
+               << " Peer closed its channel, while checking if more to read"
+               << Logger::endl;
+#endif // DEBUG_SOCKET_CPP
       return false;
     }
     if (fdinfo[0].revents & POLLERR) {
@@ -326,7 +353,11 @@ bool SocketHandler::is_more_data_to_read(int timeout) const
         << Logger::endl;
       return false;
     } else if (fdinfo[0].revents & POLLNVAL) {
-      // throw std::runtime_error("Invalid file descriptor");
+      logger
+        << Logger::warn
+        << std::this_thread::get_id()
+        << " Invalid file descriptor"
+        << Logger::endl;
       return false;
     } else if (fdinfo[0].revents & (POLLIN/* | POLLPRI*/)) {
       // logger << Logger::debug << "There is more data to read!" << Logger::endl;
@@ -441,11 +472,257 @@ void SocketHandler::send(std::ostringstream& os) const
   //        << Logger::endl;
 }
 
+void SocketHandler::getline(std::string &s)
+{
+  char c = 0;
+  bool loop = true;
+  while (c != '\n' && loop) {
+    int valread = recv(m_fd, &c, 1, 0);
+#ifdef DEBUG_SOCKET_CPP
+    // logger << Logger::debug << "getline-read-result: " << valread;
+    // if (c > ' ')
+    //   logger << Logger::debug << " '" << c << "' ";
+    // logger << Logger::debug
+    //        << " value: " << (int) c << Logger::endl;
+#endif
+    if (headers_complete && valread > 0) {
+      content_read_count += valread;
+#ifdef DEBUG_SOCKET_CPP_TRACE
+      logger << Logger::debug << "content_read_count: " << content_read_count
+             << Logger::endl;
+#endif
+    }
+    total_read++;
+    if (total_read >= maximum_request_size)
+      throw PayloadTooLarge();
+    if (valread > 0) {
+      if (c == '\r') {
+        valread = recv(m_fd, &c, 1, MSG_PEEK);
+        if (valread > 0 && c == '\n') {
+          total_read++;
+          line_count++;
+          valread = recv(m_fd, &c, 1, 0);
+          if (headers_complete)
+            content_read_count += valread;
+        }
+      } else {
+        s.push_back(c);
+      }
+    } else if (valread < 0) {
+      switch (errno) {
+        // case EWOULDBLOCK: <-- Same value as EAGAIN.  Both defined in include
+        // files for portability
+        case EAGAIN: {
+#ifdef DEBUG_SOCKET_CPP_TRACE
+          if (logger.is_level(Logger::debug))
+            logger << Logger::debug
+                   << std::this_thread::get_id()
+                   << " (read) EAGAIN (" << again_count << ") on socket " << m_fd
+                   << Logger::endl;
+#endif
+          loop = false;
+          if (!headers_complete ||
+              (content_length > 0 && content_read_count < content_length)) {
+            const int timeout = headers_complete ? 10000 : 1000;
+#ifdef DEBUG_SOCKET_CPP
+          logger << Logger::debug
+                 << "Checking (EAGAIN) for more data with timeout of "
+                 << timeout << Logger::endl;
+#endif
+            read_complete = !is_more_data_to_read(timeout);
+            if (!read_complete) {
+              // set_flag(m_fd, O_NONBLOCK);
+              loop = true;
+#ifdef DEBUG_SOCKET_CPP_TRACE
+              logger << Logger::debug << "There is more data" << Logger::endl;
+              again_count++;
+            } else {
+              logger << Logger::debug << "There is no more data" << Logger::endl;
+#endif
+            }
+#ifdef DEBUG_SOCKET_CPP_TRACE
+          } else {
+            logger << Logger::debug << "Not trying again" << Logger::endl;
+#endif
+          }
+          break;
+        }
+        case EINTR: {
+#ifdef DEBUG_SOCKET_CPP
+          if (logger.is_level(Logger::debug))
+            logger << Logger::debug
+                   << std::this_thread::get_id()
+                   << "(read) EINTR on socket " << m_fd << Logger::endl;
+#endif // DEBUG_SOCKET_CPP
+          // EINTR only occurs on non-blocking reads
+          // loop again
+          break;
+        }
+        case EBADF: {
+          logger << Logger::warn << std::this_thread::get_id()
+                 << " Bad file descriptor (EBADF)"
+                 << " File descriptor: " << m_fd
+                 << Logger::endl;
+          loop = false;
+          break;
+        }
+        case ETIMEDOUT: {
+          logger << Logger::warn << std::this_thread::get_id()
+                 << " Timeout (ETIMEDOUT)"
+                 << " File descriptor: " << m_fd
+                 << Logger::endl;
+          loop = false;
+          break;
+        }
+        default:
+          throw std::runtime_error("Unexpected error reading socket (" +
+                                   std::to_string(errno) + ")");
+      }
+    } else {
+#ifdef DEBUG_SOCKET_CPP
+      logger << Logger::debug << "EOF" << Logger::endl;
+#endif
+      loop = false;
+    }
+    if (!loop)
+      read_complete = true;
+#ifdef DEBUG_SOCKET_CPP
+    // if (loop)
+    //   logger << Logger::debug << "getline() looping" << Logger::endl;
+    // else
+    //   logger << Logger::debug << "getline() not looping" << Logger::endl;
+#endif
+  } // while
+#ifdef DEBUG_SOCKET_CPP
+  // logger << Logger::debug << "Exiting getline()" << Logger::endl;
+#endif
+}
+
+void SocketHandler::read(HTTPServerRequest &request)
+{
+  clear_flag(m_fd, O_NONBLOCK);
+  // set_flag(m_fd, O_NONBLOCK);
+#ifdef DEBUG_SOCKET_CPP_TRACE
+  logger << Logger::debug << "   --- New request ---   " << Logger::endl;
+#endif
+  std::string body;
+  while (true) {
+    std::string s;
+    // std::cout << "getline()\n";
+    getline(s);
+#ifdef DEBUG_SOCKET_CPP_TRACE
+    logger << Logger::debug << line_count << " >>>" << s << "<<< "
+           << s.size() << " (" << content_read_count  << ")" << Logger::endl;
+#endif
+    if (!headers_complete && s.empty()) {
+      headers_complete = true;
+      // Using non-blocking reads once all the headers have been read
+      set_flag(m_fd, O_NONBLOCK);
+      content_length = request.get_content_length();
+#ifdef DEBUG_SOCKET_CPP_TRACE
+      logger << Logger::debug << "-- end of headers --- ContentLength: "
+             << content_length << " (" << content_read_count << ")" << Logger::endl;
+#endif
+    } else if (!headers_complete) {
+      std::string::size_type p;
+      if (line_count == 1) {
+        p = s.find(' ');
+        if (p != std::string::npos) {
+          auto search = request.request_methods.find(s.substr(0, p));
+          if (search != request.request_methods.end()) {
+            request.method = search->second;
+          }
+          // std::cout << "Method type is: \"" << request.method_to_str() << "\"\n";
+          s.erase(0, p+1);
+          // std::cout << "> After erase: " << line_count << " \"" << s << "\"\n";
+          p = s.find(' ');
+          if (p != std::string::npos) {
+            request.uri = s.substr(0, p);
+            s.erase(0, p+1);
+          }
+          // std::cout << "HTTP_REQUEST Path: \"" << request.uri << "\"\n";
+          request.query_params = UriUtils::get_query_params(request.uri);
+          // std::cout << "Query parameters:\n";
+          // for (auto qp = request.query_params.begin(); qp != request.query_params.end(); ++qp) {
+          //   std::cout << qp->first << '=' << qp->second << '\n';
+          // }
+          request.protocol = s;
+          // std::cout << "Protocol: \"" << request.protocol << "\"\n";
+        } else {
+          std::cerr << "Warning: invalid request at line " << line_count << '\n';
+        }
+      } else {
+        // TODO Is the space after colon in HTTP header required
+        p = s.find(": ");
+        if (p != std::string::npos) {
+          const std::string key = s.substr(0, p);
+          const std::string value = p < s.size() ? s.substr(p+2) : "";
+          // std::cout << "Header: \"" << key << "\" -> \"" << value << "\"\n";
+          request.headers[key] = value;
+        } else {
+          std::cerr << "Warning: invalid header at line " << line_count << '\n';
+        }
+      }
+    } else {
+#ifdef DEBUG_SOCKET_CPP
+      // logger << Logger::debug << "body line" << Logger::endl;
+#endif
+      request.handle_content_line(s);
+    }
+    if (read_complete) {
+#ifdef DEBUG_SOCKET_CPP_TRACE
+      logger << Logger::debug << "-- read complete flag is set--" << Logger::endl;
+#endif
+      // Have we really finished reading all the data?
+      if (!headers_complete ||
+          (content_length > 0 && content_read_count < content_length)) {
+        const int timeout = headers_complete ? 10000 : 1000;
+#ifdef DEBUG_SOCKET_CPP
+          logger << Logger::debug << "Checking for more data with timeout of "
+                 << timeout << Logger::endl;
+#endif
+          read_complete = !is_more_data_to_read(timeout);
+          if (read_complete) {
+#ifdef DEBUG_SOCKET_CPP
+            logger << Logger::debug << "No more data to read" << Logger::endl;
+#endif
+            break;
+          } else {
+#ifdef DEBUG_SOCKET_CPP
+            logger << Logger::debug << "More data to read" << Logger::endl;
+#endif
+            // set_flag(m_fd, O_NONBLOCK);
+            // clear_flag(m_fd, O_NONBLOCK);
+            // std::cout << "More data\n";
+          }
+      } else {
+#ifdef DEBUG_SOCKET_CPP_TRACE
+        logger << Logger::debug << "Finished reading request" << Logger::endl;
+#endif
+        break;
+      }
+    } // read_complete
+  } // while
+
+#ifdef DEBUG_SOCKET_CPP
+  // logger << Logger::debug << "Content-Length: " << content_length
+  //        << " content read count: " << content_read_count << Logger::endl;
+  // logger << Logger::debug << "EAGAIN count: " << again_count << Logger::endl;
+#endif
+  if (content_length >= 0 && content_length != content_read_count) {
+    logger << Logger::warn << "Warning: Content-Length provided as "
+           << content_length << " does not match actual length of "
+           << content_read_count << Logger::endl;
+  }
+}
+
+/// \deprecated use read(HTTPServerRequest&) instead
 std::string SocketHandler::read()
 {
-  // logger << Logger::debug
-  //        << std::this_thread::get_id()
-  //        << " Reading from file descriptor: " << m_fd << Logger::endl;
+  // if (logger.is_level(Logger::debug))
+  //   logger << Logger::debug
+  //          << std::this_thread::get_id()
+  //          << " Reading from file descriptor: " << m_fd << Logger::endl;
 
   // set_flag(m_fd, O_NONBLOCK);
   std::string request_body;
@@ -453,61 +730,102 @@ std::string SocketHandler::read()
   int again = 0;
   const int again_limit = 3;
   int short_read_count = 0;
+  int previous_read = 0;
+#ifdef DEBUG_SOCKET_CPP
+  int empty_buffer_count = 0;
+  int eagain_count = 0;
+  int max_again_level = 0;
+#endif // DEBUG_SOCKET_CPP
   while (again < again_limit) {
     // std::cout << "reading max " << sizeof(buffer) << " bytes from socket\n";
-    // logger << Logger::debug
-    //        << "Reading buffer from socket " << m_fd << Logger::endl;
+    // if (logger.is_level(Logger::debug))
+    //   logger << Logger::debug
+    //          << "Reading buffer from socket " << m_fd << Logger::endl;
     int valread = ::read(m_fd, buffer, sizeof(buffer));
-    // logger << Logger::debug << "Read " << valread << " bytes from socket "
-    //        << m_fd << Logger::endl;
+    if (previous_read < 0 && valread > 0) {
+#ifdef DEBUG_SOCKET_CPP
+      if (logger.is_level(Logger::debug) && eagain_count > 0)
+        logger << Logger::debug
+               << "There was a successful read of " << valread
+               << " bytes after EAGAIN (" << eagain_count << ")"
+               << Logger::endl;
+#endif // DEBUG_SOCKET_CPP
+      again = 0;
+    }
+    previous_read = valread;
+    // if (logger.is_level(Logger::debug))
+    //   logger << Logger::debug << "Read " << valread << " bytes from socket "
+    //          << m_fd << Logger::endl;
     if (valread > 0) {
-      // if (logger.is_level(Logger::debug)) {
-      //   if (short_read_count > 0) {
-      //     logger << Logger::debug
-      //            << std::this_thread::get_id()
-      //            << ' ' << short_read_count << " short block reads on socket "
-      //            << m_fd
-      //            << Logger::endl;
-      //   }
-      //   logger << Logger::debug << "<< buffer >>" << Logger::endl;
-      //   std::string sbuf(buffer, valread);
-      //   DebugUtils::hex_dump(sbuf, std::clog);
-      //   logger << Logger::debug << "<< end of buffer >>" << Logger::endl;
-      // }
+      total_read += valread;
+      if (logger.is_level(Logger::debug)) {
+        // if (short_read_count > 0) {
+        //   logger << Logger::debug
+        //          << std::this_thread::get_id()
+        //          << ' ' << short_read_count << " short block reads on socket "
+        //          << m_fd
+        //          << Logger::endl;
+        // }
+        // logger << Logger::debug << "<< buffer >>" << Logger::endl;
+        // std::string sbuf(buffer, valread);
+        // DebugUtils::hex_dump(sbuf, std::clog);
+        // logger << Logger::debug << "<< end of buffer >>" << Logger::endl;
+      }
       request_body.append(buffer, valread);
       if (valread < sizeof(buffer)) {
         short_read_count++;
-        // We occasionally see the number of bytes being read is less than the
+        // We definitely see the number of bytes being read being less than the
         // buffer size, but in fact there is actually more data to be read, so
         // we must try again.
         set_flag(m_fd, O_NONBLOCK);
-        // logger << Logger::debug << "Buffer is empty on socket " << m_fd
-        //        << Logger::endl;
+#ifdef DEBUG_SOCKET_CPP
+        empty_buffer_count++;
+#endif // DEBUG_SOCKET_CPP
+        // if (logger.is_level(Logger::debug))
+        //   logger << Logger::debug << "Buffer is empty on socket " << m_fd
+        //          << Logger::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-      }
+        // if (is_more_data_to_read(2000)) {
+        //   if (logger.is_level(Logger::debug))
+        //     logger << Logger::debug
+        //            << "Buffer less than full but more data to read on socket "
+        //            << m_fd << Logger::endl;
+        //   again = 0;
+        // } else {
+        //   logger << Logger::debug
+        //          << "Buffer less than full and no more data to read on socket "
+        //          << m_fd << Logger::endl;
+        //   again = again_limit;
+        // }
+      } // else {
       // The socket read blocks (observed with Chrome) when the data exactly
       // matches the buffer size, so play safe and set non-blocking mode for all
       // subsequent reads.
       set_flag(m_fd, O_NONBLOCK);
       again = 0;
     } else if (valread == 0) {
-      // logger << Logger::debug
-      //        << std::this_thread::get_id()
-      //        << " Break - EOF on socket " << m_fd << Logger::endl;
+#ifdef DEBUG_SOCKET_CPP
+      if (logger.is_level(Logger::debug))
+        logger << Logger::debug
+               << std::this_thread::get_id()
+               << " Break - EOF on socket " << m_fd << Logger::endl;
+#endif // DEBUG_SOCKET_CPP
       m_eof = true;
       break;
     } else if (valread == -1) {
-      // logger << Logger::debug
-      //        << "errno: " << errno << " " << strerror(errno)
-      //        << " on socket " << m_fd << Logger::endl;
+      // if (logger.is_level(Logger::debug))
+      //   logger << Logger::debug
+      //          << "errno: " << errno << " " << strerror(errno)
+      //          << " on socket " << m_fd << Logger::endl;
       switch (errno) {
         // case EWOULDBLOCK: <-- Same value as EAGAIN.  Both defined in include
         // files for portability
         case EAGAIN: {
-          // logger << Logger::debug
-          //        << std::this_thread::get_id()
-          //        << "(read) EAGAIN (x" << again << ") on socket " << m_fd
-          //        << Logger::endl;
+          // if (logger.is_level(Logger::debug))
+          //   logger << Logger::debug
+          //          << std::this_thread::get_id()
+          //          << "(read) EAGAIN (" << again << ") on socket " << m_fd
+          //          << Logger::endl;
           if (short_read_count == 0) {
             // logger << Logger::debug
             //        << std::this_thread::get_id()
@@ -519,12 +837,18 @@ std::string SocketHandler::read()
           } else {
             again = again_limit;
           }
+#ifdef DEBUG_SOCKET_CPP
+          eagain_count++;
+#endif // DEBUG_SOCKET_CPP
           break;
         }
         case EINTR: {
-          // logger << Logger::debug
-          //        << std::this_thread::get_id()
-          //        << "(read) EINTR on socket " << m_fd << Logger::endl;
+#ifdef DEBUG_SOCKET_CPP
+          if (logger.is_level(Logger::debug))
+            logger << Logger::debug
+                   << std::this_thread::get_id()
+                   << "(read) EINTR on socket " << m_fd << Logger::endl;
+#endif // DEBUG_SOCKET_CPP
           again = again_limit;
           break;
         }
@@ -552,6 +876,23 @@ std::string SocketHandler::read()
       throw std::runtime_error("Unexpected response reading socket");
     }
   }
+#ifdef DEBUG_SOCKET_CPP
+  if (logger.is_level(Logger::debug)) {
+    if (empty_buffer_count > 1)
+      logger << Logger::debug << "The buffer was empty on "
+             << empty_buffer_count << " occasions" << Logger::endl;
+    // if (again <= again_limit)
+    //   logger << Logger::debug << "Again count: " << again
+    //          << Logger::endl;
+    if (eagain_count > 0)
+      logger << Logger::debug << "EAGAIN error count: " << eagain_count
+             << " with again count reaching a maxium of " << max_again_level
+             << Logger::endl;
+    logger << Logger::debug
+           << "Read total of " << total_read << " bytes from socket " << m_fd
+           << Logger::endl;
+  }
+#endif // DEBUG_SOCKET_CPP
   // std::cout << "<< request body >>" << '\n';
   // DebugUtils::hex_dump(request_body, std::cout);
   // std::cout << "<< end of request body >>" << '\n';

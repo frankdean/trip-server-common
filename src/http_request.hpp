@@ -92,6 +92,11 @@ public:
   virtual ~my_money_put() {}
 };
 
+class PayloadTooLarge : std::exception {
+public:
+  PayloadTooLarge() : std::exception() {}
+};
+
 typedef std::map<std::string, std::string> param_map;
 
 class HTTPServerRequest {
@@ -123,15 +128,15 @@ private:
   std::map<std::string, std::string> post_params;
   void handle_multipart_form_data(const std::string &s);
   void handle_x_www_form_urlencoded(const std::string &s);
-protected:
-  void handle_content_line(const std::string &s);
 public:
-  HTTPServerRequest(std::string http_request);
+  HTTPServerRequest();
+  HTTPServerRequest(const std::string &http_request);
   static std::map<std::string, HTTPMethod> request_methods;
   HTTPMethod method;
   ContentType content_type;
   /// Multipart form elements, keyed by name
   std::map<std::string, multipart_type> multiparts;
+  void handle_content_line(const std::string &s);
   std::string method_to_str() const;
   std::map<std::string, std::string> get_post_params() const {
     return post_params;
@@ -158,6 +163,7 @@ public:
     // }
     // return "";
   }
+  long get_content_length();
   std::string user_id;
   // The body content of the request, excluding headers etc.
   std::string content;

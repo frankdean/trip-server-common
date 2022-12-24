@@ -398,9 +398,7 @@ void BaseRequestHandler::append_head_section(std::ostream& os) const
 void BaseRequestHandler::append_head_title_section(std::ostream& os) const
 {
   if (!get_page_title().empty())
-    os << "    <title>"
-       << get_page_title()
-       << "    </title>\n";
+    os << "    <title>" << get_page_title() << "</title>\n";
 }
 
 void BaseRequestHandler::append_head_content(std::ostream& os) const
@@ -510,7 +508,11 @@ void BaseRequestHandler::create_full_html_page_for_standard_response(
   append_head_end(response.content);
   append_body_start(response.content);
   response.content
-    << "<h1>" << status_message << "</h1>\n";
+    << "<div class=\"container-fluid\">\n"
+    << "<h1>Error&nbsp;" << response.status_code << "&mdash;" << status_message << "</h1>\n"
+    << "</div>\n";
+  append_footer_content(response.content);
+  append_pre_body_end(response.content);
   append_body_end(response.content);
   append_html_end(response.content);
   set_content_headers(response);
@@ -585,6 +587,11 @@ void HTTPRequestHandler::handle_request(
       std::cerr << "std::out_of_range exception occurred handling request: "
                 << e.what() << '\n';
       handle_bad_request(request, response);
+    } catch (const PayloadTooLarge &e) {
+      response.content.clear();
+      response.content.str("");
+      response.status_code = HTTPStatus::payload_too_large;
+      create_full_html_page_for_standard_response(response);
     } catch (const std::exception &e) {
       std::cerr << "std::exception exception occurred handling request: "
                 << e.what() << '\n';

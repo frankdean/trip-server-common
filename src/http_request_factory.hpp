@@ -45,6 +45,7 @@ private:
   /// An optional prefix to all the application URLs.
   std::string uri_prefix;
   static fdsd::utils::Logger logger;
+  long maximum_request_size;
 public:
   HTTPRequestFactory(std::string uri_prefix);
   virtual ~HTTPRequestFactory() {}
@@ -54,6 +55,9 @@ public:
   virtual std::unique_ptr<HTTPServerResponse>
       create_response_object() const;
   std::string get_uri_prefix() const { return uri_prefix; }
+  virtual long get_maximum_request_size() const {
+    return maximum_request_size;
+  }
 protected:
   std::vector<std::shared_ptr<BaseRequestHandler>> pre_login_handlers;
   std::vector<std::shared_ptr<HTTPRequestHandler>> post_login_handlers;

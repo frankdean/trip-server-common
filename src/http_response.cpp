@@ -113,6 +113,9 @@ std::string HTTPServerResponse::get_status_message(HTTPStatus code) const
     case HTTPStatus::not_found:
       message.append("Not Found");
       break;
+    case HTTPStatus::payload_too_large:
+      message.append("Payload Too Large");
+      break;
     case HTTPStatus::internal_server_error:
       message.append("Internal Server Error");
       break;

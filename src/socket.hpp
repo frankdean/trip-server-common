@@ -22,7 +22,10 @@
 #ifndef SOCKET_HPP
 #define SOCKET_HPP
 
+// #define DEBUG_SOCKET_CPP
+
 #include "logger.hpp"
+#include <exception>
 #include <netinet/in.h>
 #include <sstream>
 #include <string>
@@ -31,6 +34,8 @@ namespace fdsd
 {
 namespace web
 {
+
+class HTTPServerRequest;
 
 class SocketUtils {
 protected:
@@ -59,12 +64,37 @@ class SocketHandler : public SocketUtils
 {
 private:
   int m_fd;
+  long maximum_request_size;
   bool m_eof;
+  long total_read;
+  bool headers_complete;
+  bool read_complete;
+  long content_length;
+  long content_read_count;
+#ifdef DEBUG_SOCKET_CPP
+  long again_count;
+#endif
+  int line_count;
+protected:
+  void getline(std::string &s);
 public:
-  SocketHandler(int fd) : m_fd(fd), m_eof(false) {}
+  SocketHandler(int fd, long maximum_request_size)
+    : m_fd(fd),
+      maximum_request_size(maximum_request_size),
+      m_eof(false),
+      total_read(),
+      headers_complete(false),
+      read_complete(false),
+      content_length(),
+      content_read_count(),
+#ifdef DEBUG_SOCKET
+      again_count(),
+#endif
+      line_count() {}
   ~SocketHandler();
   bool is_more_data_to_read(int timeout) const;
   void close() const;
+  void read(HTTPServerRequest &request);
   std::string read();
   void send(std::ostringstream& os) const;
   bool is_eof() const {

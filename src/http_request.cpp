@@ -50,7 +50,25 @@ bool fdsd::web::istr_compare(std::string const& s1, std::string const& s2)
   return false;
 }
 
-HTTPServerRequest::HTTPServerRequest(std::string http_request)
+HTTPServerRequest::HTTPServerRequest()
+  :
+    multipart_state(multipart_state_type::ready),
+    boundary_key(),
+    current_part(),
+    _keep_alive(false),
+    post_params(),
+    method(HTTPMethod::unknown),
+    content_type(ContentType::unknown),
+    user_id(),
+    content(),
+    uri("/"),
+    protocol(),
+    headers(),
+    query_params()
+{
+}
+
+HTTPServerRequest::HTTPServerRequest(const std::string &http_request)
   :
     multipart_state(multipart_state_type::ready),
     boundary_key(),
@@ -288,11 +306,13 @@ void HTTPServerRequest::handle_content_line(const std::string &s)
       content_type = ContentType::x_www_form_urlencoded;
     } else if (type.find("application/json") != std::string::npos) {
       content_type = ContentType::application_json;
-    } else if (type.empty()) {
-      std::cerr << "Content type is not specified\n";
-    } else {
-      std::cerr << "Warning: cannot determine content type from type \""
-                << type << "\"\n";
+    } else if (method != HTTPMethod::get) {
+      if (type.empty()) {
+        std::cerr << "Content type for uri \"" << uri << "\" is not specified\n";
+      } else {
+        std::cerr << "Warning: cannot determine content type for request \"" << uri << "\" from type \""
+                  << type << "\"\n";
+      }
     }
   }
   switch (content_type) {
@@ -307,6 +327,19 @@ void HTTPServerRequest::handle_content_line(const std::string &s)
       content += s;
       break;
   }
+}
+
+long HTTPServerRequest::get_content_length() {
+  const std::string s = get_header("Content-Length");
+  try {
+    if (!s.empty())
+      return std::stol(s);
+  } catch (const std::invalid_argument& e) {
+    // return -1;
+  } catch (const std::out_of_range& e) {
+    // return -1;
+  }
+  return -1;
 }
 
 std::string HTTPServerRequest::get_cookie(const std::string cookie_name) const {
