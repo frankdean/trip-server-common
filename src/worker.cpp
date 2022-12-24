@@ -147,6 +147,7 @@ bool Worker::handle_socket_read(fdsd::web::SocketHandler& socket_handler)
     response->content.clear();
     response->content.str("");
     response->status_code = HTTPStatus::payload_too_large;
+    response->set_header("Connection", "close");
     handler->create_full_html_page_for_standard_response(*response);
     std::ostringstream response_message;
     response->get_http_response_message(response_message);
