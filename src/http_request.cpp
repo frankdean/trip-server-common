@@ -193,6 +193,51 @@ std::string HTTPServerRequest::method_to_str() const
   return "Unknown";
 }
 
+std::string HTTPServerRequest::get_post_param(std::string name) const {
+  auto search = post_params.find(name);
+  if (search != post_params.end()) {
+    return search->second;
+  }
+  return "";
+}
+std::pair<bool, long>
+    HTTPServerRequest::get_optional_post_param_long(std::string name) const {
+  auto search = post_params.find(name);
+  if (search != post_params.end() && !search->second.empty()) {
+    try {
+      return std::make_pair(true, std::stol(search->second));
+    } catch (const std::invalid_argument &e) {
+      std::cerr << e.what() << " converting post param \""
+                << name << "\" -> \"" << search->second << "\"\n";
+      throw;
+    }
+  }
+  return std::pair<bool, long>();
+}
+std::pair<bool, double>
+    HTTPServerRequest::get_optional_post_param_double(std::string name) const {
+  auto search = post_params.find(name);
+  if (search != post_params.end() && !search->second.empty()) {
+    try {
+      return std::make_pair(true, std::stod(search->second));
+    } catch (const std::invalid_argument &e) {
+      std::cerr << e.what() << " converting post param \""
+                << name << "\" -> \"" << search->second << "\"\n";
+      throw;
+    }
+  }
+  return std::pair<bool, double>();
+}
+
+std::pair<bool, std::string>
+    HTTPServerRequest::get_optional_post_param(std::string name) const {
+  auto search = post_params.find(name);
+  if (search != post_params.end()) {
+    return std::make_pair(true, search->second);
+  }
+  return std::pair<bool, std::string>();
+}
+
 void HTTPServerRequest::handle_multipart_form_data(const std::string &s)
 {
   // std::cout << "Figuring out what to do with \"" << s << "\"\n";

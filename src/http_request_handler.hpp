@@ -169,6 +169,17 @@ protected:
         full_request_url,
         std::regex(get_uri_prefix() + wanted_postfix_regex));
   }
+  void append_element_disabled_flag(std::ostream &os,
+                                    bool append);
+  void append_element_selected_flag(std::ostream &os,
+                                    bool append);
+
+  template <typename T>
+  void append_value(std::ostream &os, bool append, const T& value) {
+    if (append)
+      os << value;
+  }
+
 public:
   /// \param uri_prefix the prefix to use for the entire application.
   /// Defaults to an empty string.

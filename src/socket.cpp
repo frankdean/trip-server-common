@@ -641,7 +641,7 @@ void SocketHandler::read(HTTPServerRequest &request)
             s.erase(0, p+1);
           }
           // std::cout << "HTTP_REQUEST Path: \"" << request.uri << "\"\n";
-          request.query_params = UriUtils::get_query_params(request.uri);
+          request.set_query_params(UriUtils::get_query_params(request.uri));
           // std::cout << "Query parameters:\n";
           // for (auto qp = request.query_params.begin(); qp != request.query_params.end(); ++qp) {
           //   std::cout << qp->first << '=' << qp->second << '\n';

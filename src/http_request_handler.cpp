@@ -120,9 +120,10 @@ std::string BaseRequestHandler::get_redirect_uri(
 {
   std::ostringstream os;
   os << request.uri;
-  for (auto qp = request.query_params.begin(); qp !=
-         request.query_params.end(); ++qp) {
-    os << (qp == request.query_params.begin() ? '?' : '&')
+  auto query_params = request.get_query_params();
+  for (auto qp = query_params.begin(); qp !=
+         query_params.end(); ++qp) {
+    os << (qp == query_params.begin() ? '?' : '&')
        << qp->first << '=' << qp->second;
   }
   return os.str();
@@ -184,9 +185,9 @@ void FileRequestHandler::append_body_content(
     const std::string if_modified_since = request.get_header("If-Modified-Since");
     if (!if_modified_since.empty()) {
       DateTime if_modified_since_date(if_modified_since);
-      std::cout << "If modified since: \"" << if_modified_since
-                << "\" converted to: \"" << if_modified_since_date << "\"\n";
-      std::cout << "Comparing with file datetime: " << file_info.datetime << '\n';
+      // std::cout << "If modified since: \"" << if_modified_since
+      //           << "\" converted to: \"" << if_modified_since_date << "\"\n";
+      // std::cout << "Comparing with file datetime: " << file_info.datetime << '\n';
       if (!(if_modified_since_date < file_info.datetime)) {
         response.status_code = HTTPStatus::not_modified;
         return;
@@ -526,6 +527,20 @@ void BaseRequestHandler::handle_bad_request(
   response.content.str("");
   response.status_code = HTTPStatus::bad_request;
   create_full_html_page_for_standard_response(response);
+}
+
+void BaseRequestHandler::append_element_disabled_flag(std::ostream &os,
+                                                      bool append)
+{
+  if (append)
+    os << " disabled";
+}
+
+void BaseRequestHandler::append_element_selected_flag(std::ostream &os,
+                                                      bool append)
+{
+  if (append)
+    os << " selected";
 }
 
 void HTTPRequestHandler::handle_request(

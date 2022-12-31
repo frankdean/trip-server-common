@@ -125,7 +125,8 @@ private:
   /// Holds the current multipart form part during parsing
   multipart_type current_part;
   bool _keep_alive;
-  std::map<std::string, std::string> post_params;
+  param_map query_params;
+  param_map post_params;
   void handle_multipart_form_data(const std::string &s);
   void handle_x_www_form_urlencoded(const std::string &s);
 public:
@@ -138,16 +139,14 @@ public:
   std::map<std::string, multipart_type> multiparts;
   void handle_content_line(const std::string &s);
   std::string method_to_str() const;
-  std::map<std::string, std::string> get_post_params() const {
+  param_map get_post_params() const {
     return post_params;
   }
-  std::string get_post_param(std::string name) const {
-    auto search = post_params.find(name);
-    if (search != post_params.end()) {
-      return search->second;
-    }
-    return "";
-  }
+  std::string get_post_param(std::string name) const;
+  std::pair<bool, long> get_optional_post_param_long(std::string name) const;
+  std::pair<bool, double>
+      get_optional_post_param_double(std::string name) const;
+  std::pair<bool, std::string> get_optional_post_param(std::string name) const;
   std::map<long, std::string>
       extract_array_param_map(std::string array_name) const;
   std::string get_header(std::string name) const {
@@ -170,7 +169,12 @@ public:
   std::string uri;
   std::string protocol;
   param_map headers;
-  param_map query_params;
+  param_map get_query_params() const {
+    return query_params;
+  }
+  void set_query_params(param_map params) {
+    query_params = params;
+  }
   const std::string get_query_param(std::string name) const {
     auto search = query_params.find(name);
     if (search != query_params.end()) {
