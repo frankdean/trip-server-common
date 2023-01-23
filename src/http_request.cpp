@@ -309,8 +309,6 @@ void HTTPServerRequest::handle_multipart_form_data(const std::string &s)
         multipart_state = header;
       } else {
         // std::cout << "Appending to body\n";
-        if(!current_part.body.empty())
-          current_part.body.push_back('\n');
         current_part.body.append(s);
       }
       break;
