@@ -653,13 +653,13 @@ void BaseAuthenticatedRequestHandler::append_login_body(
     "          </td>\n"
     "          <td>\n"
     // Placeholder prompting user to enter their username
-    "            <input id=\"input-email\" type=\"text\" class=\"form-control\" placeholder=\"" <<
+    "            <input id=\"input-email\" type=\"email\" autocomplete=\"username\" class=\"form-control\" placeholder=\"" <<
 #ifdef HAVE_BOOST_LOCALE
     translate("Username")
 #else
     "Username"
 #endif
-     << "\" name=\"email\" size=\"25\" />\n"
+     << "\" name=\"email\" size=\"25\" >\n"
     "          </td>\n"
     "        </tr>\n"
     "        <tr>\n"
@@ -675,13 +675,13 @@ void BaseAuthenticatedRequestHandler::append_login_body(
     "          </td>\n"
     "          <td>\n"
     // Placeholder prompting user to enter their password
-    "            <input id=\"input-password\" type=\"password\" class=\"form-control\" placeholder=\"" <<
+    "            <input id=\"input-password\" type=\"password\" autocomplete=\"current-password\" class=\"form-control\" placeholder=\"" <<
 #ifdef HAVE_BOOST_LOCALE
     translate("Password")
 #else
     "Password"
 #endif
-     << "\" name=\"password\" size=\"25\" />\n"
+     << "\" name=\"password\" size=\"25\" >\n"
     "          </td>\n"
     "        </tr>\n"
     "        <tr>\n"
