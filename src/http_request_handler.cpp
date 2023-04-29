@@ -61,6 +61,7 @@ struct mime_type {
   { "json",  "application/json; charset=UTF-8" },
   { "mjs",   "text/javascript; charset=UTF-8" },
   { "png",  "image/png" },
+  { "svg", "image/svg+xml" },
   { "txt",  "text/plain; charset=UTF-8" },
   { "yaml", "application/x-yaml"},
   { "yml", "application/x-yaml"}
