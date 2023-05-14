@@ -121,11 +121,13 @@ std::string BaseRequestHandler::get_redirect_uri(
 {
   std::ostringstream os;
   os << request.uri;
-  auto query_params = request.get_query_params();
-  for (auto qp = query_params.begin(); qp !=
-         query_params.end(); ++qp) {
-    os << (qp == query_params.begin() ? '?' : '&')
-       << qp->first << '=' << qp->second;
+  if (request.uri.find('?') == std::string::npos) {
+    auto query_params = request.get_query_params();
+    for (auto qp = query_params.begin(); qp !=
+           query_params.end(); ++qp) {
+      os << (qp == query_params.begin() ? '?' : '&')
+         << qp->first << '=' << qp->second;
+    }
   }
   return os.str();
 }
