@@ -106,7 +106,7 @@ protected:
                         std::string location) const;
   /// Escapes string with HTML entities
   std::string x(std::string s) const;
-  std::string get_redirect_uri(const HTTPServerRequest& request) const;
+  virtual std::string get_redirect_uri(const HTTPServerRequest& request) const;
   virtual void append_doc_type(std::ostream& os) const;
   virtual void append_html_start(std::ostream& os) const;
   virtual void append_head_start(std::ostream& os) const;
