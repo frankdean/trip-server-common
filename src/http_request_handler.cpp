@@ -231,6 +231,12 @@ void FileRequestHandler::handle_directory(
   std::string uri = request.uri;
   FileUtils::strip_prefix(get_uri_prefix(), uri);
   FileUtils::strip_query_params(uri);
+  // Relative path handling is much easier if the browser is using a URL ending
+  // with the path separator.
+  if(request.uri.back() != '/') {
+    redirect(request, response, request.uri + '/');
+    return;
+  }
   std::string relative_path = UriUtils::uri_decode(uri, false);
   std::string full_path = document_root + relative_path;
   auto dir_list = FileUtils::get_directory(full_path);
@@ -240,7 +246,7 @@ void FileRequestHandler::handle_directory(
     << "</h1>\n    <hr/>\n<pre>\n";
   if (!dir_list.empty()) {
 
-    // std::cout << "application_prefix_url: \"" << application_prefix_url << "\"\n";
+    // std::cout << "application_prefix_url: \"" << get_uri_prefix() << "\"\n";
     // std::cout << "document_root: \"" << document_root << "\"\n";
     // std::cout << "relative_path: \"" << relative_path << "\"\n";
 
