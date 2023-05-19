@@ -414,7 +414,7 @@ void BaseRequestHandler::append_head_title_section(std::ostream& os) const
 void BaseRequestHandler::append_head_content(std::ostream& os) const
 {
   os <<
-    "    <style>.footer {padding: 10px; background-color: #f5f5f5;}</style>\n";
+    "    <style>.text-bg-secondary {color: #fff; background-color: RGBA(108,117,125);} .px-2 {padding-left: .5rem; padding-right: .5rem;} .py-2 {padding-top: .5rem; padding-bottom: .5rem;} .mt-5 {margin-top: 3rem;} .small {font-size: .875em;}</style>\n";
 }
 
 void BaseRequestHandler::append_head_end(std::ostream& os) const
@@ -429,9 +429,16 @@ void BaseRequestHandler::append_body_start(std::ostream& os) const
 
 void BaseRequestHandler::append_footer_content(std::ostream& os) const
 {
-  os
-    << "    <p class=\"footer\">"
-    << PACKAGE << " version " << VERSION << "</p>\n";
+  std::string package_name = PACKAGE;
+  std::transform(package_name.begin(),
+                 package_name.end(),
+                 package_name.begin(),
+                 ::toupper);
+  os <<
+    "    <div class=\"footer px-2 py-2 mt-5 text-bg-secondary\">\n"
+    "      <div class=\"small\">" << package_name <<
+    " " << VERSION << "</div>\n"
+    "    </div>\n";
 }
 
 void BaseRequestHandler::append_body_end(std::ostream& os) const
