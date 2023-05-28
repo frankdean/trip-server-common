@@ -34,6 +34,7 @@
 #include <cstdlib>
 #include <memory>
 #include <iostream>
+#include <syslog.h>
 
 using namespace fdsd::web;
 using namespace fdsd::utils;
@@ -598,6 +599,7 @@ void ExampleApplication::initialize_user_sessions(bool expire_sessions)
 
 int main (int argc, char *argv[])
 {
+  openlog(PACKAGE_NAME, LOG_PID, LOG_USER);
   Logger logger("example", std::clog, Logger::info);
   const std::string default_application_uri_prefix = "/example";
   try {

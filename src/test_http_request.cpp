@@ -203,7 +203,7 @@ bool test_get_header_case_insignificant()
 bool test_form_upload()
 {
   bool retval = true;
-    
+
   try {
     HTTPServerRequest request(test_post_file);
     retval = request.headers.size() == 12;

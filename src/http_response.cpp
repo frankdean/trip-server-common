@@ -24,6 +24,7 @@
 #include "../config.h"
 #include <ostream>
 #include <string>
+#include <syslog.h>
 
 using namespace fdsd::utils;
 using namespace fdsd::web;
@@ -121,6 +122,9 @@ std::string HTTPServerResponse::get_status_message(HTTPStatus code) const
       break;
     default:
       std::cerr << "WARNING: unhandled standard response for status code" << (int) code << '\n';
+      syslog(LOG_ERR,
+             "No message has been coded in standard response handler for status code %d",
+             (int) code);
       break;
   }
   return message;

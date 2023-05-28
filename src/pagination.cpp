@@ -119,12 +119,12 @@ void Pagination::update_page_ranges()
 
 std::uint32_t Pagination::previous()
 {
-  std::cout << "previous() Current page: " << m_current_page << '\n';
+  // std::cout << "previous() Current page: " << m_current_page << '\n';
   if (m_current_page > 1)
     m_current_page--;
-  std::cout << "previous() Current page after: " << m_current_page << '\n';
+  // std::cout << "previous() Current page after: " << m_current_page << '\n';
   update_page_ranges();
-  std::cout << "previous() Current page after update: " << m_current_page << '\n';
+  // std::cout << "previous() Current page after update: " << m_current_page << '\n';
   return m_current_page;
 }
 

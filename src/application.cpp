@@ -30,6 +30,7 @@
 #ifdef HAVE_BOOST_LOCALE
 #include <boost/locale.hpp>
 #endif
+#include <syslog.h>
 
 using namespace fdsd::web;
 using namespace fdsd::utils;
@@ -135,6 +136,9 @@ std::string Application::get_config_value(
     read_config_file();
   if (config == nullptr) {
     std::cerr << "Config is null\n";
+    syslog(LOG_EMERG,
+           "The `config` variable must not be null.  "
+           "Application will abort.");
   }
   return config->get(key, default_value);
 }

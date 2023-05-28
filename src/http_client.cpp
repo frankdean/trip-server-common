@@ -28,6 +28,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
+#include <syslog.h>
 
 using namespace fdsd::utils;
 using namespace fdsd::web;
@@ -219,6 +220,9 @@ void HttpClient::perform_request()
         case EBADF:
           std::cerr << " Bad file descriptor (EBADF)"
                     << " File descriptor\n";
+          syslog(LOG_NOTICE,
+                 "Bad file descripitor reading from %s",
+                 options.host.c_str());
           again = again_limit;
           break;
         default:
@@ -232,6 +236,9 @@ void HttpClient::perform_request()
   if (again >= again_limit) {
     std::cerr << "Abandoned reading response after the maximum "
               << again_limit << " attempts";
+    syslog(LOG_NOTICE,
+           "Abandoned reading response after the maximum %d attempts",
+           again_limit);
   }
   if (close(fd_skt) < 0)
     throw std::runtime_error("Failure closing socket");

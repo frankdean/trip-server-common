@@ -28,7 +28,9 @@
 #include <iostream>
 #include <locale>
 #include <ostream>
+#include <sstream>
 #include <string>
+#include <syslog.h>
 
 namespace fdsd
 {
@@ -39,7 +41,9 @@ class Logger
 {
 public:
   enum log_level {
-    emergency, alert, critical, error, warn, notice, info, debug
+    emergency = LOG_EMERG, alert = LOG_ALERT, critical = LOG_CRIT,
+    error = LOG_ERR, warn = LOG_WARNING, notice = LOG_NOTICE, info = LOG_INFO,
+    debug = LOG_DEBUG
   };
   enum manip {
     /// Write a linefeed to the stream and sets the new_line flag to true
@@ -51,11 +55,14 @@ public:
 private:
   static const std::array<std::string, 8> levels;
 
-  // The label is included to help identify entries in the log
+  /// The label is included to help identify entries in the log
   std::string label;
 
-  // The stream we are logging to
+  /// The stream we are logging to
   std::ostream& os;
+
+  /// For logging to syslog
+  static std::ostringstream s_syslog;
 
   /// The target logging level of the class.  Everything of lower priority is
   /// ignored.
@@ -70,17 +77,7 @@ private:
   bool new_line;
 
   /// Writes the current date and time to the stream.
-  void put_now() const {
-    std::time_t t =
-      std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-    tm* nowTM = std::localtime(&t);
-
-    const std::time_put<char>& tp =
-      std::use_facet<std::time_put<char>>(std::locale());
-    std::string format = "%F %T %z";
-    tp.put(os, os, ' ', nowTM,
-           format.c_str(), format.c_str() + format.size());
-  }
+  void put_now() const;
 public:
   Logger(std::string label,
          std::ostream& stream = std::clog,
@@ -91,13 +88,7 @@ public:
       manip_level(level),
       new_line(true) {}
 
-  void log(std::string s, log_level log_level = debug) {
-    if (log_level <= level) {
-      put_now();
-      os << ' ' << label << " [" << levels[level] << "] "<< s
-          << '\n';
-    }
-  }
+  void log(std::string s, log_level log_level = debug);
 
   bool is_level(log_level log_level) const {
     return (log_level <= level);
@@ -133,8 +124,20 @@ public:
         logger.put_now();
         logger.os << ' ' << logger.label << " ["
                    << Logger::levels[logger.manip_level] << "] ";
+        // Make sure we're at the end of the stream
+        s_syslog.flush();
+        s_syslog.seekp(0, std::ios_base::end);
+        if (s_syslog.tellp() != 0) {
+          syslog(logger.manip_level,
+                 "[%s] %s",
+                 levels[logger.manip_level].c_str(),
+                 s_syslog.str().c_str());
+          s_syslog.clear();
+          s_syslog.str("");
+        }
       }
       logger.os << value;
+      s_syslog << value;
       logger.new_line = false;
     }
     return logger;

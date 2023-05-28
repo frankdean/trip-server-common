@@ -26,3 +26,27 @@ using namespace fdsd::utils;
 const std::array<std::string, 8> Logger::levels = {
   "EMERGENCY", "ALERT", "CRITICAL", "ERROR", "WARN", "NOTICE", "INFO", "DEBUG"
 };
+
+std::ostringstream Logger::s_syslog;
+
+void Logger::put_now() const {
+  std::time_t t =
+    std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+  tm* nowTM = std::localtime(&t);
+
+  const std::time_put<char>& tp =
+    std::use_facet<std::time_put<char>>(std::locale());
+  std::string format = "%F %T %z";
+  tp.put(os, os, ' ', nowTM,
+         format.c_str(), format.c_str() + format.size());
+}
+
+void Logger::log(std::string s, log_level log_level) {
+  if (log_level <= level) {
+    put_now();
+    os << ' ' << label << " [" << levels[level] << "] " << s
+       << '\n';
+    if (log_level > debug)
+      syslog(log_level, "[%s] %s", levels[level].c_str(), s.c_str());
+  }
+}

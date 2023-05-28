@@ -826,8 +826,8 @@ void HTTPLoginRequestHandler::do_handle_request(
     if (!redirect_uri.empty() &&
         redirect_uri.find(get_uri_prefix()) == 0 &&
         redirect_uri != get_login_uri()) {
-      if (GetOptions::verbose_flag)
-        std::cout << "Setting redirect cookie to: \"" << redirect_uri << "\"\n";
+      // if (GetOptions::verbose_flag)
+      //   std::cout << "Setting redirect cookie to: \"" << redirect_uri << "\"\n";
       response.set_cookie(get_login_redirect_cookie_name(), redirect_uri);
     }
     append_login_body(response.content, true);
@@ -848,42 +848,42 @@ void HTTPLoginRequestHandler::do_handle_request(
       std::string redirect_url =
         request.get_cookie(get_login_redirect_cookie_name());
       if (GetOptions::verbose_flag) {
-#ifdef HAVE_BOOST_LOCALE
-        // Message showing the server administrator the URL a browser is being redirected to after login
-        std::cout << "Login redirect cookie: " << redirect_url << '\n';
-#else
-        std::cout << "Login redirect cookie: " << redirect_url << '\n';
-#endif
+// #ifdef HAVE_BOOST_LOCALE
+//         // Message showing the server administrator the URL a browser is being redirected to after login
+//         std::cout << "Login redirect cookie: " << redirect_url << '\n';
+// #else
+//         std::cout << "Login redirect cookie: " << redirect_url << '\n';
+// #endif
       }
       // Immediately expire the cookie
       response.set_cookie(get_login_redirect_cookie_name(), request.uri, 0);
       if (redirect_url.empty() || redirect_url ==
           get_login_uri() || redirect_url.front() != '/') {
         std::string default_uri = get_default_uri();
-        if (GetOptions::verbose_flag)
-          std::cout << "Redirect URL was empty, redirecting to: "
-                    << default_uri << '\n';
+        // if (GetOptions::verbose_flag)
+        //   std::cout << "Redirect URL was empty, redirecting to: "
+        //             << default_uri << '\n';
 
         redirect_url = default_uri;
       }
       if (GetOptions::verbose_flag) {
-#ifdef HAVE_BOOST_LOCALE
-        // Message showing the server administrator the URL a browser is being redirected to
-        std::cout << format(translate("Redirecting to: {1}")) % redirect_url << '\n';
-#else
-        std::cout << "Redirecting to: " << redirect_url << '\n';
-#endif
+// #ifdef HAVE_BOOST_LOCALE
+//         // Message showing the server administrator the URL a browser is being redirected to
+//         std::cout << format(translate("Redirecting to: {1}")) % redirect_url << '\n';
+// #else
+//         std::cout << "Redirecting to: " << redirect_url << '\n';
+// #endif
       }
       redirect(request, response, redirect_url);
     } else {
-      if (GetOptions::verbose_flag)
-        std::cout << "Login failure, bad credentials\n";
+      // if (GetOptions::verbose_flag)
+      //   std::cout << "Login failure, bad credentials\n";
       append_login_body(response.content, false);
       response.status_code = HTTPStatus::unauthorized;
     }
   } else {
-    if (GetOptions::verbose_flag)
-      std::cout << "Login bad request\n";
+    // if (GetOptions::verbose_flag)
+    //   std::cout << "Login bad request\n";
     response.generate_standard_response(HTTPStatus::bad_request);
   }
 }
@@ -895,13 +895,13 @@ void HTTPLogoutRequestHandler::do_handle_request(
   std::string session_id = request.get_cookie(get_session_id_cookie_name());
   get_session_manager()->invalidate_session(session_id);
   // Immediately expire the cookies
-  if (GetOptions::verbose_flag)
-    std::cout << "Logout\n";
+  // if (GetOptions::verbose_flag)
+  //   std::cout << "Logout\n";
   // std::cout << "Expiring existing login redirect cookie\n";
   response.set_cookie(get_login_redirect_cookie_name(), "", 0);
-  if (GetOptions::verbose_flag)
-    std::cout << "Logout redirecting to default uri \""
-              << get_default_uri() << "\"\n";
+  // if (GetOptions::verbose_flag)
+  //   std::cout << "Logout redirecting to default uri \""
+  //             << get_default_uri() << "\"\n";
   redirect(request, response, get_default_uri());
 }
 

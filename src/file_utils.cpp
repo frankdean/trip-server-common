@@ -25,6 +25,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <syslog.h>
 
 #ifdef HAVE_CXX17
 #include <chrono>
@@ -51,16 +52,10 @@ void FileUtils::strip_prefix(std::string prefix, std::string& path)
   //           << "Path before: \""
   //           << path << "\"\n";
   std::string::size_type x = path.find(prefix);
-  if (x == std::string::npos) {
-    std::cerr << "Warning: failed to find prefix in path: \""
-              << path << "\"\n";
+
+  // Path must start with the prefix
+  if (x == std::string::npos || x != 0)
     return;
-  }
-  if (x != 0) {
-    std::cerr << "Warning: path: \""
-              << path << "\" does not start with the prefix\n";
-    return;
-  }
 
   int n = prefix.length();
   // std::cout << "Erasing first " << n << " characters\n";
@@ -95,6 +90,9 @@ bool FileUtils::is_directory(std::string path)
     return std::filesystem::is_directory(path);
   } catch (const std::filesystem::filesystem_error& e) {
     std::cerr << e.what() << '\n';
+    syslog(LOG_WARNING, "File system error determining if \"%s\" is a directory: %s",
+           path.c_str(),
+           e.what());
   }
 #else
   struct stat s;
@@ -115,6 +113,9 @@ bool FileUtils::is_file(std::string path)
       std::filesystem::is_symlink(path);
   } catch (const std::filesystem::filesystem_error& e) {
     std::cerr << e.what() << '\n';
+    syslog(LOG_WARNING, "File system error determining if \"%s\" is a file: %s",
+           path.c_str(),
+           e.what());
   }
 #else
   struct stat s;
@@ -222,7 +223,11 @@ file_details FileUtils::get_file_details(std::string path)
 
     retval.type = FileUtils::get_type(std::filesystem::status(p).type());
   } catch (const std::filesystem::filesystem_error& e) {
-    std::cerr << e.what() << '\n';
+    std::cerr << "Error getting details for \"" << path << "\": "
+              << e.what() << '\n';
+    syslog(LOG_WARNING,
+           "Error getting details for \"%s\": %s",
+           path.c_str(), e.what());
     retval.type = FileUtils::unknown;
   }
 #else
@@ -237,6 +242,8 @@ file_details FileUtils::get_file_details(std::string path)
   } else {
     std::cerr << "Failed to get time of last modification for \""
               << path << "\"\n";
+    syslog(LOG_WARNING, "Failed to get time of last modification for \"%s\"",
+           path.c_str());
     DateTime file_datetime;
   }
 #endif
@@ -269,6 +276,9 @@ std::vector<dir_entry> FileUtils::get_directory(std::string path)
   } catch (const std::filesystem::filesystem_error &e) {
     std::cerr << "Exception reading directory: "
               << e.what() << '\n';
+    syslog(LOG_WARNING,
+           "Exception reading directory: \"%s\": %s", path.c_str(),
+           e.what());
     throw DirectoryAccessFailedException(path);
   }
 #else
@@ -292,6 +302,7 @@ std::vector<dir_entry> FileUtils::get_directory(std::string path)
         std::cerr << "Unable to stat file: \""
                   << file_path
                   << "\"\n";
+        syslog(LOG_NOTICE, "Unable to stat file: \"%s\"", file_path.c_str());
       }
       retval.push_back(e);
     }
