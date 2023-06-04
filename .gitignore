@@ -23,8 +23,11 @@
 /src/Makefile
 /src/Makefile.in
 /src/example
+/src/test_dao_helper
 /src/test_date_utils
 /src/test_debug_utils
+/src/test_file_utils
+/src/test_http_request
 /src/test_pagination
 /src/test_pool
 /src/test_uri_utils

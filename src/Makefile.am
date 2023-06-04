@@ -4,6 +4,8 @@ example_SOURCES = \
 	application.hpp \
 	configuration.cpp \
 	configuration.hpp \
+	dao_helper.cpp \
+	dao_helper.hpp \
 	date_utils.cpp \
 	date_utils.hpp \
 	debug_utils.cpp \
@@ -13,6 +15,8 @@ example_SOURCES = \
 	file_utils.hpp \
 	get_options.cpp \
 	get_options.hpp \
+	http_client.cpp \
+	http_client.hpp \
 	http_request.cpp \
 	http_request.hpp \
 	http_request_factory.cpp \
@@ -46,7 +50,7 @@ test_dao_helper_SOURCES = test_dao_helper.cpp date_utils.cpp date_utils.hpp \
 	logger.cpp logger.hpp
 test_date_utils_SOURCES = test_date_utils.cpp logger.cpp logger.hpp
 test_file_utils_SOURCES = test_file_utils.cpp date_utils.cpp date_utils.hpp \
-	logger.cpp logger.hpp
+	logger.cpp logger.hpp dao_helper.cpp
 test_uri_utils_SOURCES = test_uri_utils.cpp
 test_debug_utils_SOURCES = test_debug_utils.cpp
 test_pagination_SOURCES = test_pagination.cpp logger.cpp logger.hpp \

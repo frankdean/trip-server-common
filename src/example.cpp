@@ -304,7 +304,7 @@ const std::string ExampleLoginRequestHandler::login_redirect_cookie_name =
 const std::string ExampleLoginRequestHandler::session_id_cookie_name =
   "EXAMPLE_SESSION_ID";
 const std::string ExampleLoginRequestHandler::test_user_id = "10e8d704-cf88-4bd0-995a-fcf4a341da9f";
-const std::string ExampleLoginRequestHandler::test_username = "example";
+const std::string ExampleLoginRequestHandler::test_username = "example@example.test";
 const std::string ExampleLoginRequestHandler::test_password = "bavmubmoj";
 
 bool ExampleLoginRequestHandler::validate_password(
