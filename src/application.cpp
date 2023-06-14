@@ -49,8 +49,7 @@ Application::Application(std::string listen_address,
   socket_queue(),
   socket(listen_address, port),
   workers(),
-  worker_threads(),
-  document_root("./")
+  worker_threads()
 {
   initialize_locale(locale_str);
 }
@@ -94,9 +93,8 @@ void Application::run()
     read_next_socket();
 }
 
-void Application::read_config_file()
+void Application::read_config_file(std::string config_filename)
 {
-  std::string config_filename = get_config_filename();
   if (config_filename.empty()) {
     if (GetOptions::verbose_flag) {
 #ifdef HAVE_BOOST_LOCALE
@@ -132,8 +130,6 @@ std::string Application::get_config_value(
     std::string key,
     std::string default_value)
 {
-  if (config == nullptr)
-    read_config_file();
   if (config == nullptr) {
     std::cerr << "Config is null\n";
     syslog(LOG_EMERG,

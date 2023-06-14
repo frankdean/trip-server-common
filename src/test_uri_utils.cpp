@@ -234,10 +234,10 @@ bool test_encode_all_unreserved_and_reserved_characters_form_encoded()
 
 bool test_encode_rfc_1738()
 {
-  const std::string test_string = "http://some.foo.bar/place?entry=first line(%1)\nsecond line (#2)";
+  const std::string test_string = "http://some.foo.bar/place?entry=first line(%1)\nsecond line (#2)\x7F";
   const std::string encoded = UriUtils::uri_encode_rfc_1738(test_string);
   const std::string expected =
-    "http://some.foo.bar/place?entry=first%20line(%251)%0Asecond%20line%20(%232)";
+    "http://some.foo.bar/place?entry=first%20line(%251)%0Asecond%20line%20(%232)%7F";
   const bool retval = encoded == expected;
   if (!retval)
     std::cout << "test_encode_rfc_1738 failed\n"

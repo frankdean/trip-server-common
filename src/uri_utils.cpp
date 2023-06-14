@@ -38,6 +38,11 @@ const std::string UriUtils::sub_delims =
 // From RFC 1738
 const std::string UriUtils::unsafe_characters = " <>\"#%{}|\\^~[]`";
 
+// From RFC 1630
+// const std::string UriUtils::safe_chars = "$-_@.&+-";
+// const std::string UriUtils::extra_chars = "!*\""'(|),";
+// const std::string UriUtils::reserved_chars = "=;/#?: ";
+
 const std::string UriUtils::reserved_characters =
   gen_delims + sub_delims;
 
@@ -126,13 +131,13 @@ std::string UriUtils::uri_encode(std::string s, bool is_form_url_encoded)
   return retval.str();
 }
 
-// TODO fully validate rules for RFC 1738
 /**
  * Intended to encode URI strings according to RFC 1738.  The rules have not
  * been properly evaluated at this time and the implementation of this method is
  * likely to change.
  *
- * https://datatracker.ietf.org/doc/html/rfc1738
+ * - https://datatracker.ietf.org/doc/html/rfc1630
+ * - https://datatracker.ietf.org/doc/html/rfc1738
  *
  * \param s the string to be encoded.
  *
@@ -145,7 +150,7 @@ std::string UriUtils::uri_encode_rfc_1738(std::string s)
     int v = c;
     if (c == ' ') {
       retval << "%20";
-    } else if (v <= 0x1F || v >= 0x80 || unsafe_characters.find(c) != std::string::npos) {
+    } else if (v <= 0x1F || v >= 0x7F || unsafe_characters.find(c) != std::string::npos) {
       retval << "%" << std::uppercase << std::setfill('0') << std::setw(2) << std::hex << v;
     } else {
       retval << c;

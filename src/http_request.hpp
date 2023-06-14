@@ -149,19 +149,12 @@ public:
   std::pair<bool, std::string> get_optional_post_param(std::string name) const;
   std::map<long, std::string>
       extract_array_param_map(std::string array_name) const;
-  std::string get_header(std::string name) const {
-    for (const auto& i : headers) {
-      std::string s = i.first;
-      if (istr_compare(s, name))
-        return i.second;
-    }
-    return "";
-    // auto search = headers.find(std::to_lower(name));
-    // if (search != headers.end()) {
-    //   return search->second;
-    // }
-    // return "";
+  std::string get_header(const std::string &name) const {
+    return iget_map_entry(name, headers);
   }
+  static std::string iget_map_entry(
+      const std::string &name,
+      const std::map<std::string, std::string> &map);
   long get_content_length();
   std::string user_id;
   // The body content of the request, excluding headers etc.

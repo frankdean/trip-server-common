@@ -36,16 +36,14 @@
 using namespace fdsd::web;
 using namespace fdsd::utils;
 
-bool fdsd::web::istr_compare_predicate(unsigned char a, unsigned char b)
-{
-  return std::tolower(a) == std::tolower(b);
-}
-
 bool fdsd::web::istr_compare(std::string const& s1, std::string const& s2)
 {
   if (s1.length() == s2.length()) {
     return std::equal(s1.begin(), s1.end(),
-                      s2.begin(), istr_compare_predicate);
+                      s2.begin(), [] (unsigned char a, unsigned char b) {
+                        return std::tolower(a) == std::tolower(b);
+                      });
+
   }
   return false;
 }
@@ -271,9 +269,8 @@ void HTTPServerRequest::handle_multipart_form_data(const std::string &s)
       // if (is_terminating_boundary)
       //   std::cout << "Is a terminating boundary string\n";
       if (is_boundary || is_terminating_boundary) {
-        // TODO - need to do case-insignificant search of headers
-        const std::string content_disposition = current_part.headers["Content-Disposition"];
-        // TODO figure out name from headers
+        const std::string content_disposition =
+          iget_map_entry("Content-Disposition", current_part.headers);
         std::string name;
         if (!content_disposition.empty()) {
           std::vector<std::string> elements = UriUtils::split_params(content_disposition, ";");
@@ -292,14 +289,14 @@ void HTTPServerRequest::handle_multipart_form_data(const std::string &s)
           }
         }
         if (!name.empty()) {
-          try {
-            // TODO - need to do case-insignificant search of headers
-            const std::string type = current_part.headers.at("Content-Type");
-            // std::cout << "MULTIPART CONTENT TYPE: \"" << type << "\" BODY: \"" << current_part.body << "\"\n";
-            multiparts[name] = current_part;
-          } catch (const std::out_of_range &e) {
-            // Handle as a standard post parameter
+          // std::cout << "\nSearch for header: \"Content-Type\"\n";
+          const std::string type = iget_map_entry("Content-Type", current_part.headers);
+          // std::cout << "MULTIPART CONTENT TYPE: \"" << type << "\" BODY: \"" << current_part.body << "\"\n";
+          if (type.empty()) {
             post_params[name] = current_part.body;
+          } else {
+            // Handle as a standard post parameter
+            multiparts[name] = current_part;
           }
         } else {
           std::cerr << "Warning: could not find a name for the disposition content\n";
@@ -370,6 +367,16 @@ void HTTPServerRequest::handle_content_line(const std::string &s)
       content += s;
       break;
   }
+}
+
+std::string HTTPServerRequest::iget_map_entry(
+    const std::string &name,
+    const std::map<std::string, std::string> &map)
+{
+  for (const auto& i : map)
+    if (istr_compare(i.first, name))
+      return i.second;
+  return "";
 }
 
 long HTTPServerRequest::get_content_length() {

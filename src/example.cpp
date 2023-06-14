@@ -420,6 +420,21 @@ protected:
   virtual std::string get_default_uri() const override {
     return get_uri_prefix();
   }
+  virtual std::string get_handler_name() const override {
+    return "ExampleNotFoundHandler";
+  }
+  virtual void do_handle_request(
+      const fdsd::web::HTTPServerRequest& request,
+      fdsd::web::HTTPServerResponse& response) override {
+    // If the url is effectively a root url for the application, redirect.
+    if (compare_request_regex(request.uri, "($|/$)") ||
+        request.uri.empty() ||
+        request.uri == "/") {
+      redirect(request, response, get_default_uri());
+    } else {
+      HTTPNotFoundRequestHandler::do_handle_request(request, response);
+    }
+  }
 public:
   ExampleNotFoundHandler(std::string uri_prefix) :
     HTTPNotFoundRequestHandler(uri_prefix) {}
@@ -538,13 +553,10 @@ class ExampleApplication : public Application {
 private:
   std::string config_filename;
   std::string application_prefix_url;
+  std::string document_root;
 protected:
   virtual std::shared_ptr<HTTPRequestFactory> get_request_factory() const override;
-  virtual std::string get_config_filename() const override {
-    return config_filename.empty() ?
-      "" :
-      config_filename;
-  }
+  std::string get_config_filename() const { return config_filename; }
 public:
   ExampleApplication(std::string listen_address,
                      std::string port,
@@ -557,6 +569,8 @@ public:
   void set_config_filename(std::string const config_filename) {
     this->config_filename = config_filename;
   }
+  void set_document_root(std::string directory) { document_root = directory; }
+  std::string get_document_root() const { return document_root; }
 };
 
 ExampleApplication::ExampleApplication(std::string listen_address,
@@ -567,7 +581,8 @@ ExampleApplication::ExampleApplication(std::string listen_address,
     listen_address,
     port,
     locale),
-  config_filename()
+  config_filename(),
+  document_root("")
 {
   if (application_prefix_url.empty()) {
     application_prefix_url = "/";
@@ -577,13 +592,12 @@ ExampleApplication::ExampleApplication(std::string listen_address,
     application_prefix_url.erase(application_prefix_url.length() -1, 1);
   }
   this->application_prefix_url = application_prefix_url;
-  std::cout << "Prefix URL: \"" << this->application_prefix_url << "\"\n";
 }
 
 std::shared_ptr<HTTPRequestFactory>
     ExampleApplication::get_request_factory() const
 {
-  ExampleRequestFactory factory(document_root, application_prefix_url);
+  ExampleRequestFactory factory(get_document_root(), application_prefix_url);
   return std::make_shared<ExampleRequestFactory>(factory);
 }
 
@@ -619,11 +633,12 @@ int main (int argc, char *argv[])
     if (!options.config_filename.empty())
       application.set_config_filename(options.config_filename);
 
+    application.read_config_file(options.config_filename);
 #ifdef ALLOW_STATIC_FILES
     if (!options.doc_root.empty()) {
       if (options.doc_root.substr(options.doc_root.length() -1, 1) != "/")
         options.doc_root.append("/");
-      application.document_root = options.doc_root;
+      application.set_document_root(options.doc_root);
     }
 #endif // ALLOW_STATIC_FILES
 

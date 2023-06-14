@@ -652,7 +652,8 @@ void SocketHandler::read(HTTPServerRequest &request)
           std::cerr << "Warning: invalid request at line " << line_count << '\n';
         }
       } else {
-        // TODO Is the space after colon in HTTP header required
+        // Section 4.2 of RFC 1945 - header name and value separated by colon
+        // followed by space
         p = s.find(": ");
         if (p != std::string::npos) {
           const std::string key = s.substr(0, p);
