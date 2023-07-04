@@ -244,10 +244,12 @@ void SocketHandler::close() const
 
   // Half close the connection (the writing half)
   if (shutdown(m_fd, SHUT_WR) < 0) {
-    logger << Logger::warn
+#ifdef DEBUG_SOCKET_CPP
+    logger << Logger::debug
            << std::this_thread::get_id()
            << " Error shutting down socket " << m_fd << " for write: ("
            << errno << ") " << ::strerror(errno) << Logger::endl;
+#endif // DEBUG_SOCKET_CPP
   }
 
   // Set blocking mode so that perhaps close waits.
