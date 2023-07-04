@@ -61,7 +61,7 @@ typedef std::map<std::string, Session> session_map;
 
 class SessionManager {
 private:
-  static const int max_session_minutes;
+  static const int default_max_session_minutes;
 protected:
   /// Mutex used to lock the sessions map
   std::mutex session_mutex;
@@ -83,8 +83,8 @@ public:
   virtual void load_sessions() {}
   void clear_sessions();
   std::string get_session_user_id(const std::string& session_id);
-  int get_max_session_minutes() {
-    return max_session_minutes;
+  virtual int get_max_session_minutes() {
+    return default_max_session_minutes;
   }
 };
 

@@ -26,7 +26,7 @@ using namespace fdsd::web;
 
 fdsd::web::SessionManager* SessionManager::session_manager = nullptr;
 
-const int SessionManager::max_session_minutes = 60;
+const int SessionManager::default_max_session_minutes = 60;
 
 void SessionManager::set_session_manager(
     fdsd::web::SessionManager* session_manager)
@@ -101,7 +101,7 @@ void SessionManager::expire_sessions()
     //           << std::chrono::duration_cast<std::chrono::seconds>(diff).count()
     //           << " seconds\n";
 
-    if (diff > std::chrono::minutes(max_session_minutes)) {
+    if (diff > std::chrono::minutes(get_max_session_minutes())) {
       session = sessions.erase(session);
     } else {
       ++session;
