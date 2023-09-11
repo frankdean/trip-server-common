@@ -26,7 +26,8 @@
 #include "uri_utils.hpp"
 #include <arpa/inet.h>
 #include <chrono>
-#include <errno.h>
+#include <cstring>
+// #include <errno.h>
 #include <fcntl.h>
 #include <iostream>
 #include <poll.h>
@@ -197,7 +198,7 @@ int Socket::wait_connection(int timeout)
     }
     logger
       << "Error whilst polling socket: "
-      << ::strerror(errno)
+      << std::strerror(errno)
       << Logger::endl;
   }
   // logger << Logger::debug << "Finished polling" << Logger::endl;
@@ -285,7 +286,7 @@ void SocketHandler::close() const
       logger << Logger::debug
              << std::this_thread::get_id()
              << " Error closing socket: "
-             << ::strerror(errno) << Logger::endl;
+             << std::strerror(errno) << Logger::endl;
 
   } catch (const std::exception& e) {
     logger << Logger::debug
@@ -375,7 +376,7 @@ bool SocketHandler::is_more_data_to_read(int timeout) const
     }
     logger
       << "Error whilst polling socket for more data: "
-      << ::strerror(errno)
+      << std::strerror(errno)
       << Logger::endl;
   }
   return false;
@@ -413,7 +414,7 @@ void SocketHandler::send(std::ostringstream& os) const
           break;
         default:
           logger << Logger::warn << "Error sending response: ("
-                 << errno << ") " << ::strerror(errno) << Logger::endl;
+                 << errno << ") " << std::strerror(errno) << Logger::endl;
       }
       break;
     } else if (r != length) {
