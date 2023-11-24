@@ -29,7 +29,7 @@ Minimal packages required to build from the source distribution tarball:
 
 - g++
 - gawk
-- libpqxx-dev
+- libpqxx-dev (optional)
 - make
 - uuid-dev
 
@@ -37,6 +37,9 @@ To build the application:
 
 	$ ./configure
 	$ make
+
+If not using `libpqxx-dev`, configure the example with
+`configure --disable-postgreql`.
 
 Optionally, run the tests:
 
@@ -62,7 +65,8 @@ Optionally install the `uuid-runtime` package which runs a daemon that
 ### macOS
 
 Download, build and install the latest 6.x release of libpqxx from
-<https://github.com/jtv/libpqxx/releases/tag/6.4.8>.
+<https://github.com/jtv/libpqxx/releases/tag/6.4.8>.  Alternatively, configure
+the example with `configure --disable-postgreql`.
 
 `libpqxx` needs the `doxygen` and `xmlto` packages installed to build the
 refence documentation and tutorial.  Pass `--disable-documentation` to the

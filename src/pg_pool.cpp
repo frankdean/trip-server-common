@@ -25,6 +25,7 @@
 #ifdef HAVE_BOOST_LOCALE
 #include <boost/locale.hpp>
 #endif
+#include <syslog.h>
 
 #ifdef HAVE_PQXX_CONFIG_PUBLIC_COMPILER_H
 
@@ -35,7 +36,7 @@ using namespace boost::locale;
 #endif
 
 PgPoolManager::PgPoolManager(std::string connect_string, int pool_size)
-  : mutex(), ready(), connect_string(connect_string)
+  : DbErrorHandler(), mutex(), ready(), connect_string(connect_string)
 {
   if (GetOptions::verbose_flag) {
 #ifdef HAVE_BOOST_LOCALE
@@ -47,9 +48,10 @@ PgPoolManager::PgPoolManager(std::string connect_string, int pool_size)
 #else
     std::cout << "Creating database pool with "
               << pool_size
-              << " connection(s)\n";
+              << " connection" << (pool_size != 1 ? "s" : "") << "\n";
 #endif
   }
+
   for (int i = 0; i < pool_size; i++) {
     queue.emplace(std::make_shared<lazyconnection>(connect_string));
   }
@@ -68,9 +70,9 @@ void PgPoolManager::free_connection(std::shared_ptr<lazyconnection> connection)
 std::shared_ptr<lazyconnection> PgPoolManager::get_connection()
 {
   std::unique_lock<std::mutex> lock(mutex);
-  while (queue.empty()) {
+  while (queue.empty())
     ready.wait(lock);
-  }
+
   auto connection = queue.front();
   queue.pop();
   return connection;
@@ -78,15 +80,28 @@ std::shared_ptr<lazyconnection> PgPoolManager::get_connection()
 
 void PgPoolManager::refresh_connections()
 {
-  if (queue.empty())
-    return;
+  syslog(LOG_INFO, "Refreshing database connection pool");
 
   std::unique_lock<std::mutex> lock(mutex);
+  // The queue could be empty if all the connections are being held by workers.
+  // Wait until at least one connection is available to refresh.
+  while (queue.empty())
+    ready.wait(lock);
+
   auto size = queue.size();
   for (int i = 0; i < size; i++) {
     queue.pop();
     queue.emplace(std::make_shared<lazyconnection>(connect_string));
   }
+  if (size == 1)
+    syslog(LOG_INFO, "Refreshed %lu database connection", size);
+  else
+    syslog(LOG_INFO, "Refreshed %lu database connections", size);
+}
+
+void PgPoolManager::handle_broken_connection()
+{
+  refresh_connections();
 }
 
 #endif // HAVE_PQXX_CONFIG_PUBLIC_COMPILER_H

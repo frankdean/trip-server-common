@@ -23,9 +23,11 @@
 #define WORKER_HPP
 
 #include "logger.hpp"
+#include "db_error_handler.hpp"
 #include <iostream>
 #include <queue>
 #include <condition_variable>
+#include <memory>
 #include <mutex>
 
 namespace fdsd
@@ -48,12 +50,19 @@ private:
   bool keep_alive;
 #endif
   static fdsd::utils::Logger logger;
+  static int worker_count;
+  int worker_id;
+  std::shared_ptr<fdsd::utils::DbErrorHandler> db_error_handler;
   std::shared_ptr<fdsd::web::HTTPRequestFactory> request_factory;
   bool handle_socket_read(fdsd::web::SocketHandler& socket_handler);
   void run();
 public:
   Worker(std::queue<int>& q,
-         std::shared_ptr<fdsd::web::HTTPRequestFactory> request_factory);
+         std::shared_ptr<fdsd::web::HTTPRequestFactory> request_factory
+#ifdef HAVE_PQXX_CONFIG_PUBLIC_COMPILER_H
+         , std::shared_ptr<fdsd::utils::DbErrorHandler> db_error_handler
+#endif
+    );
   void start();
   void stop();
 };

@@ -28,20 +28,31 @@
 #include "socket.hpp"
 #include <chrono>
 #include <thread>
+#ifdef HAVE_PQXX_CONFIG_PUBLIC_COMPILER_H
+#include <pqxx/pqxx>
+#endif
 
 using namespace fdsd::web;
 using namespace fdsd::utils;
 
 Logger Worker::logger("Worker", std::clog, fdsd::utils::Logger::info);
-
+int Worker::worker_count = 0;
 std::mutex fdsd::web::readyMutex;
 std::condition_variable fdsd::web::readyCondVar;
 
 Worker::Worker(std::queue<int>& q,
-               std::shared_ptr<fdsd::web::HTTPRequestFactory> request_factory)
+               std::shared_ptr<fdsd::web::HTTPRequestFactory> request_factory
+#ifdef HAVE_PQXX_CONFIG_PUBLIC_COMPILER_H
+               , std::shared_ptr<DbErrorHandler> db_error_handler
+#endif
+  )
   : queue(q), stop_flag(false),
 #ifdef ENABLE_KEEP_ALIVE
     keep_alive(false),
+#endif
+    worker_id(++worker_count),
+#ifdef HAVE_PQXX_CONFIG_PUBLIC_COMPILER_H
+    db_error_handler(db_error_handler),
 #endif
     request_factory(request_factory)
 {
@@ -204,8 +215,17 @@ void Worker::run() {
       //         << std::this_thread::get_id()
       //         << " Looping..."
       //         << Logger::endl;
+#ifdef HAVE_PQXX_CONFIG_PUBLIC_COMPILER_H
+    } catch (const pqxx::broken_connection& e) {
+      logger << Logger::alert << "Broken database connection in worker "
+             << worker_id << " : " << e.what() << Logger::endl;
+      db_error_handler->handle_broken_connection();
+#endif
     } catch (const std::exception& e) {
-      logger << Logger::alert << e.what() << Logger::endl;
+      logger << Logger::alert << "Exception in worker "
+             << worker_id << " : " << e.what() << Logger::endl;
+      std::cerr << "Exception type: " << typeid(e).name()
+                << " in worker " << worker_id << '\n';
     }
   } // while !stop_flag
   logger << Logger::debug

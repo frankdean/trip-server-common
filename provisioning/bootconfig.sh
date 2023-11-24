@@ -21,6 +21,8 @@
 # Uncomment the following to debug the script
 #set -x
 
+SU_CMD="su vagrant -c"
+
 ##Debian 10
 #PG_VERSION=11
 # Debian 11
@@ -65,28 +67,34 @@ systemctl restart nginx
 
 # Build the application
 if [ ! -d /home/vagrant/build ]; then
-    su vagrant -c 'mkdir /home/vagrant/build'
+    $SU_CMD 'mkdir /home/vagrant/build'
 fi
 cd /home/vagrant/build
-su - vagrant -c 'cd /home/vagrant/build && /vagrant/configure'
-su - vagrant -c 'make -C /home/vagrant/build check'
-if [ -x /home/vagrant/build/src/trip ]; then
-    cp /home/vagrant/build/src/trip /usr/local/bin/
-    chown root:root /usr/local/bin/trip
+# Don't configure if we appear to already have an installed version of trip-server
+if [ ! -x /usr/local/bin/example ]; then
+    $SU_CMD 'cd /home/vagrant/build && /vagrant/configure'
+fi
+# Run make to ensure build is up-to-date
+$SU_CMD 'make -C /home/vagrant/build check'
+if [ $? -eq 0 ] && [ -x /home/vagrant/build/src/example ]; then
+    echo "Installing example"
+    make install
+fi
+# Configure systemd
+if [ ! -e /etc/systemd/system/example.service ]; then
+    cp /vagrant/provisioning/systemd/example.service /etc/systemd/system/
+fi
+if [ -x /usr/local/bin/example ]; then
+    systemctl is-active example.service >/dev/null
+    if [ $? -ne 0 ]; then
+	systemctl enable example.service 2>/dev/null
+	systemctl start example.service 2>/dev/null
+    fi
 fi
 # Vi as default editor (no favouritism, just simpler install then Emacs)
 egrep '^export\s+EDITOR' /home/vagrant/.profile >/dev/null 2>&1
 if [ $? -ne 0 ]; then
 	echo "export EDITOR=/usr/bin/vi" >>/home/vagrant/.profile
-fi
-# Configure systemd
-if [ ! -e /etc/systemd/system/example.service ]; then
-    systemctl is-active example.service >/dev/null
-    if [ $? -ne 0 ]; then
-	cp /vagrant/provisioning/systemd/example.service /etc/systemd/system/
-	# systemctl enable example.service 2>/dev/null
-	# systemctl start example.service 2>/dev/null
-    fi
 fi
 if [ ! -e /var/log/example.log ]; then
     touch /var/log/example.log

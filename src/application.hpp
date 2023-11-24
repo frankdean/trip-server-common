@@ -24,6 +24,7 @@
 
 #include "logger.hpp"
 #include "socket.hpp"
+#include "db_error_handler.hpp"
 #include <iostream>
 #include <map>
 #include <memory>
@@ -60,7 +61,12 @@ public:
   static void signalHandler(int signum);
   void run();
   void stop_workers() const;
-  void initialize_workers(int count);
+  void initialize_workers(
+      int count
+#ifdef HAVE_PQXX_CONFIG_PUBLIC_COMPILER_H
+      , std::shared_ptr<fdsd::utils::DbErrorHandler> db_error_handler
+#endif
+    );
   void read_next_socket();
 };
 

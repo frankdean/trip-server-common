@@ -26,8 +26,8 @@ Vagrant.configure("2") do |config|
   #config.vm.box_version = "202112.19.0"
   # https://wiki.debian.org/Teams/Cloud/VagrantBaseBoxes
   # Boxes: https://app.vagrantup.com/debian
-  config.vm.box = "debian/bullseye64"
-  #config.vm.box_version = "11.20211230.1"
+  config.vm.box = "debian/bookworm64"
+  config.vm.box_version = "12.20231009.1"
 
   # Disable automatic box update checking. If you disable this, then
   # boxes will only be checked for updates when the user runs

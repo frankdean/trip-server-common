@@ -34,6 +34,9 @@
 #ifdef HAVE_BOOST_LOCALE
 #include <boost/locale.hpp>
 #endif
+#ifdef HAVE_PQXX_CONFIG_PUBLIC_COMPILER_H
+#include <pqxx/pqxx>
+#endif
 
 using namespace fdsd::utils;
 using namespace fdsd::web;
@@ -623,8 +626,13 @@ void HTTPRequestHandler::handle_request(
       response.content.str("");
       response.status_code = HTTPStatus::payload_too_large;
       create_full_html_page_for_standard_response(response);
+#ifdef HAVE_PQXX_CONFIG_PUBLIC_COMPILER_H
+    } catch (const pqxx::broken_connection &e) {
+      // Let worker handle the error
+      throw;
+#endif
     } catch (const std::exception &e) {
-      std::cerr << "std::exception exception occurred handling request: "
+      std::cerr << typeid(e).name() << " exception occurred handling request: "
                 << e.what() << '\n';
       response.content.clear();
       response.content.str("");

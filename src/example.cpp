@@ -644,12 +644,12 @@ int main (int argc, char *argv[])
 
 #ifdef HAVE_PQXX_CONFIG_PUBLIC_COMPILER_H
     // Initialize the global database pool and user session managers
-    PgPoolManager pool_manager{
-      application.get_db_connect_string(),
-      std::stoi(
-          application.get_config_value(Configuration::pg_pool_size_key,
-                                       "24"))
-    };
+    auto pool_manager = std::make_shared<PgPoolManager>(
+        application.get_db_connect_string(),
+        std::stoi(
+            application.get_config_value(Configuration::pg_pool_size_key,
+                                         "24"))
+      );
     // ExamplePgDao::set_pool_manager(&pool_manager);
 #endif
     SessionManager session_manager;
@@ -659,7 +659,11 @@ int main (int argc, char *argv[])
     application.initialize_workers(
         std::stoi(
             application.get_config_value(Configuration::worker_count_key,
-                                         "20")));
+                                         "20"))
+#ifdef HAVE_PQXX_CONFIG_PUBLIC_COMPILER_H
+        , pool_manager
+#endif
+      );
 
     logger << Logger::info
            << PACKAGE << " version " << VERSION

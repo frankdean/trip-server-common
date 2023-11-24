@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([trip-server-common], [0.0.1], [frank.dean@fdsd.co.uk])
+AC_INIT([example], [0.0.1], [frank.dean@fdsd.co.uk])
 AC_COPYRIGHT([Copyright (C) 2022-2023 Frank Dean])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign dist-xz subdir-objects info-in-builddir])
 AC_CONFIG_SRCDIR([src/http_request_factory.cpp])
@@ -126,7 +126,9 @@ dnl The following headers check is just to ensure the headers have been
 dnl installed in addition to the actual library
 AC_HEADER_ASSERT
 AC_CHECK_HEADERS([getopt.h])
-AC_CHECK_HEADERS([pqxx/config-public-compiler.h], [have_pqxx_h=yes])
+if test "x${use_postgresql}" == xyes; then
+   AC_CHECK_HEADERS([pqxx/config-public-compiler.h], [have_pqxx_h=yes])
+fi
 
 # Check if the version of libuuid supports the uuid_generate_time_safe method
 if test "x${have_libuuid}" = xyes; then

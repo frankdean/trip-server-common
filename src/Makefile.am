@@ -8,6 +8,7 @@ example_SOURCES = \
 	dao_helper.hpp \
 	date_utils.cpp \
 	date_utils.hpp \
+	db_error_handler.hpp \
 	debug_utils.cpp \
 	debug_utils.hpp \
 	example.cpp \

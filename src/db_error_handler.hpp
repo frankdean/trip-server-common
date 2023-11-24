@@ -4,7 +4,7 @@
     This file is part of Trip Server 2, a program to support trip recording and
     itinerary planning.
 
-    Copyright (C) 2022 Frank Dean <frank.dean@fdsd.co.uk>
+    Copyright (C) 2023 Frank Dean <frank.dean@fdsd.co.uk>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,42 +19,24 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
-#ifndef POOL_HPP
-#define POOL_HPP
+#ifndef DB_ERROR_HANDLER_HPP
+#define DB_ERROR_HANDLER_HPP
 
-#ifdef HAVE_PQXX_CONFIG_PUBLIC_COMPILER_H
-
-#include "db_error_handler.hpp"
-#include <condition_variable>
 #include <iostream>
-#include <memory>
-#include <mutex>
-#include <pqxx/pqxx>
-#include <queue>
-#include <string>
 
 namespace fdsd
 {
 namespace utils
 {
 
-class PgPoolManager : public fdsd::utils::DbErrorHandler {
+class DbErrorHandler {
 public:
-  PgPoolManager(std::string connect_string, int pool_size = 10);
-  void free_connection(std::shared_ptr<pqxx::lazyconnection> connection);
-  std::shared_ptr<pqxx::lazyconnection> get_connection();
-  void refresh_connections();
-  virtual void handle_broken_connection() override;
-private:
-  std::string connect_string;
-  std::mutex mutex;
-  std::condition_variable ready;
-  std::queue<std::shared_ptr<pqxx::lazyconnection>> queue;
+  DbErrorHandler() {}
+  virtual void handle_broken_connection() = 0;
 };
 
-} // namespace utils
+} // namespace web
 } // namespace fdsd
 
-#endif // HAVE_PQXX_CONFIG_PUBLIC_COMPILER_H
 
-#endif // POOL_HPP
+#endif // DB_ERROR_HANDLER_HPP

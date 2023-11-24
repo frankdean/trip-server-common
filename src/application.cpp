@@ -141,6 +141,18 @@ std::string Application::get_config_value(
 
 void Application::stop_workers() const
 {
+  if (GetOptions::verbose_flag) {
+    const int count = workers.size();
+#ifdef HAVE_BOOST_LOCALE
+    // Shows how many worker processes are still running when the application is stopping
+    std::cout << format(translate("Stopping {1} worker",
+                                  "Stopping {1} workers",
+                                  count)) % count
+              << '\n';
+#else
+    std::cout << "Stoping " << count << " worker(s)\n";
+#endif
+  }
   for (const auto worker : workers) {
     worker->stop();
   }
@@ -152,7 +164,12 @@ void Application::stop_workers() const
   }
 }
 
-void Application::initialize_workers(int count)
+void Application::initialize_workers(
+    int count
+#ifdef HAVE_PQXX_CONFIG_PUBLIC_COMPILER_H
+    , std::shared_ptr<DbErrorHandler> db_error_handler
+#endif
+  )
 {
   if (GetOptions::verbose_flag) {
 #ifdef HAVE_BOOST_LOCALE
@@ -168,7 +185,11 @@ void Application::initialize_workers(int count)
   for (int i = 0; i < count; i++) {
     auto request_factory = get_request_factory();
     auto worker = std::make_shared<Worker>(
-        Worker(socket_queue, request_factory));
+        Worker(socket_queue, request_factory
+#ifdef HAVE_PQXX_CONFIG_PUBLIC_COMPILER_H
+               , db_error_handler
+#endif
+          ));
     std::thread* t = new std::thread(&Worker::start, worker);
     worker_threads.push_back(t);
     workers.push_back(worker);
