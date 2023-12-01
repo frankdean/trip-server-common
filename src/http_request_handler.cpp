@@ -30,7 +30,9 @@
 #include "uri_utils.hpp"
 #include "uuid.hpp"
 #include <fstream>
+#include <sstream>
 #include <vector>
+#include <syslog.h>
 #ifdef HAVE_BOOST_LOCALE
 #include <boost/locale.hpp>
 #endif
@@ -632,8 +634,12 @@ void HTTPRequestHandler::handle_request(
       throw;
 #endif
     } catch (const std::exception &e) {
-      std::cerr << typeid(e).name() << " exception occurred handling request: "
-                << e.what() << '\n';
+      std::ostringstream os;
+      os << typeid(e).name()
+         << " exception occurred handling request: "
+         << e.what();
+      std::cerr << os.str() << '\n';
+      syslog(LOG_ERR, "%s", os.str().c_str());
       response.content.clear();
       response.content.str("");
       response.status_code = HTTPStatus::internal_server_error;

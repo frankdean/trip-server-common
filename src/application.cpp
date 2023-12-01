@@ -132,7 +132,7 @@ std::string Application::get_config_value(
 {
   if (config == nullptr) {
     std::cerr << "Config is null\n";
-    syslog(LOG_EMERG,
+    syslog(LOG_ERR,
            "The `config` variable must not be null.  "
            "Application will abort.");
   }
