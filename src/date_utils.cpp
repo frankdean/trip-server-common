@@ -167,7 +167,7 @@ void DateTime::init(std::string date)
 {
   // std::cout << "DateTime converting \"" << date << "\"\n";
   if (std::regex_match(date, numeric_regex)) {
-    set_ms(std::stol(date) * 1000);
+    set_ms(std::stoll(date) * 1000);
     return;
   }
   // Use regular expressions to determine the date format, then convert it to an
@@ -355,9 +355,9 @@ std::string DateTime::get_time_as_rfc7231() const
 std::string DateTime::get_time_as_iso8601_gmt() const
 {
   std::ostringstream ss;
-  const long ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+  const long long ms = std::chrono::duration_cast<std::chrono::milliseconds>(
       datetime.time_since_epoch()).count();
-  const long seconds = std::chrono::duration_cast<std::chrono::seconds>(
+  const long long seconds = std::chrono::duration_cast<std::chrono::seconds>(
       datetime.time_since_epoch()).count();
   const double r = round((static_cast<double>(ms) / 1000 - seconds) * 1000);
   std::lock_guard<std::mutex> lock(g_datetime_mutex);
