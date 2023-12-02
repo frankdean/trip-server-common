@@ -19,6 +19,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+#include <cstdint>
 #include <iostream>
 #include <regex>
 #include <sstream>
@@ -46,7 +47,7 @@ bool test_construct_string_yyyy_mm_dd_hh_mm_ss()
 
 bool test_construct_string_yyyy_mm_dd_hh_mm_ss_fraction_north_hemi_summer()
 {
-  const long long expected_ms = 1655811709685; // Tuesday, 21 June 2022 11:41:49.685 GMT
+  const int64_t expected_ms = 1655811709685; // Tuesday, 21 June 2022 11:41:49.685 GMT
   // std::cout << "expected_ms set to " << expected_ms << '\n';
   const std::string test_date = "2022-06-21 12:41:49.685+01";
   DateTime tm(test_date);
@@ -69,7 +70,7 @@ bool test_construct_string_yyyy_mm_dd_hh_mm_ss_fraction_north_hemi_summer()
 
 bool test_construct_string_yyyy_mm_dd_hh_mm_ss_fraction_north_hemi_winter()
 {
-  const long long expected_ms = 1665315662685; // Sunday, 9 October 2022 11:41:02.685
+  const int64_t expected_ms = 1665315662685; // Sunday, 9 October 2022 11:41:02.685
   const std::string test_date = "2022-10-09 11:41:02.685+01";
   DateTime tm(test_date);
   // DateTime treats all input times as local times, ignoring any time zone
@@ -322,7 +323,7 @@ bool test_date_as_time_t_string_floating_point_date()
 
 bool test_get_ms()
 {
-  const long long test_ms = 1665315662685; // Sunday, 9 October 2022 11:41:02.685
+  const int64_t test_ms = 1665315662685; // Sunday, 9 October 2022 11:41:02.685
   const std::chrono::milliseconds ms(test_ms);
   const std::chrono::time_point<std::chrono::system_clock> tp(ms);
   const DateTime dt(tp);
@@ -335,7 +336,7 @@ bool test_get_ms()
 
 bool test_get_time_as_iso8601_gmt_01()
 {
-  const long long test_ms = 1665315662685; // Sunday, 9 October 2022 11:41:02.685
+  const int64_t test_ms = 1665315662685; // Sunday, 9 October 2022 11:41:02.685
   const DateTime dt{
       std::chrono::time_point<std::chrono::system_clock>(
           std::chrono::milliseconds(test_ms))};
@@ -350,7 +351,7 @@ bool test_get_time_as_iso8601_gmt_01()
 
 bool test_get_time_as_iso8601_gmt_02()
 {
-  const long long test_ms = 1665315662000; // Sunday, 9 October 2022 11:41:02.000
+  const int64_t test_ms = 1665315662000; // Sunday, 9 October 2022 11:41:02.000
   const DateTime dt{
       std::chrono::time_point<std::chrono::system_clock>(
           std::chrono::milliseconds(test_ms))};
@@ -365,7 +366,7 @@ bool test_get_time_as_iso8601_gmt_02()
 
 bool test_get_time_as_iso8601_gmt_03()
 {
-  const long long test_ms = 1665315662005; // Sunday, 9 October 2022 11:41:02.005
+  const int64_t test_ms = 1665315662005; // Sunday, 9 October 2022 11:41:02.005
   const DateTime dt{
       std::chrono::time_point<std::chrono::system_clock>(
           std::chrono::milliseconds(test_ms))};
@@ -380,7 +381,7 @@ bool test_get_time_as_iso8601_gmt_03()
 
 bool test_get_time_as_iso8601_gmt_04()
 {
-  const long long test_ms = 1665315662100; // Sunday, 9 October 2022 11:41:02.100
+  const int64_t test_ms = 1665315662100; // Sunday, 9 October 2022 11:41:02.100
   const DateTime dt{
       std::chrono::time_point<std::chrono::system_clock>(
           std::chrono::milliseconds(test_ms))};
@@ -395,7 +396,7 @@ bool test_get_time_as_iso8601_gmt_04()
 
 bool test_parse_iso8601_gmt()
 {
-  const long long test_ms = 1665315662100; // Sunday, 9 October 2022 11:41:02.100
+  const int64_t test_ms = 1665315662100; // Sunday, 9 October 2022 11:41:02.100
   const DateTime dt{
       std::chrono::time_point<std::chrono::system_clock>(
           std::chrono::milliseconds(test_ms))};
@@ -412,7 +413,7 @@ bool test_parse_iso8601_gmt()
 
 bool test_parse_rfc822()
 {
-  const long long test_ms = 1667215374000; // Mon, 31 Oct 2022 11:22:54 GMT
+  const int64_t test_ms = 1667215374000; // Mon, 31 Oct 2022 11:22:54 GMT
   const std::string test_str("Mon, 31 Oct 2022 11:22:54 GMT");
   const DateTime result = DateTime(test_str);
   const bool retval = result.get_ms() == test_ms;
@@ -426,7 +427,7 @@ bool test_parse_rfc822()
 
 bool test_parse_rfc850()
 {
-  const long long test_ms = 1667215374000; // Mon, 31 Oct 2022 11:22:54 GMT
+  const int64_t test_ms = 1667215374000; // Mon, 31 Oct 2022 11:22:54 GMT
   const std::string test_str("Monday, 31-Oct-22 11:22:54 GMT");
   const DateTime result = DateTime(test_str);
   const bool retval = result.get_ms() == test_ms;
@@ -440,7 +441,7 @@ bool test_parse_rfc850()
 
 bool test_parse_ansi_c_date()
 {
-  const long long test_ms = 1667215374000; // Mon, 31 Oct 2022 11:22:54 GMT
+  const int64_t test_ms = 1667215374000; // Mon, 31 Oct 2022 11:22:54 GMT
   const std::string test_str("Mon Oct 31 11:22:54 2022");
   const DateTime result = DateTime(test_str);
   const bool retval = result.get_ms() == test_ms;

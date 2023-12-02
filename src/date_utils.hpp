@@ -24,6 +24,7 @@
 
 #include "logger.hpp"
 #include <chrono>
+#include <cstdint>
 #include <iomanip>
 #include <iostream>
 #include <cmath>
@@ -91,9 +92,9 @@ namespace utils
     void init(std::string);
     // void init(std::time_t);
     void set_time_t(std::time_t t);
-    void set_ms(long long ms);
+    void set_ms(int64_t ms);
     date_format default_format;
-    long long get_ms() const {
+    int64_t get_ms() const {
       return std::chrono::duration_cast<std::chrono::milliseconds>(
           datetime.time_since_epoch()).count();
     }

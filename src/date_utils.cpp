@@ -292,7 +292,7 @@ void DateTime::set_time_t(std::time_t t)
   datetime = std::chrono::system_clock::from_time_t(t);
 }
 
-void DateTime::set_ms(long long ms)
+void DateTime::set_ms(int64_t ms)
 {
   datetime = std::chrono::system_clock::time_point(
       std::chrono::milliseconds(ms));
@@ -355,9 +355,9 @@ std::string DateTime::get_time_as_rfc7231() const
 std::string DateTime::get_time_as_iso8601_gmt() const
 {
   std::ostringstream ss;
-  const long long ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+  const int64_t ms = std::chrono::duration_cast<std::chrono::milliseconds>(
       datetime.time_since_epoch()).count();
-  const long long seconds = std::chrono::duration_cast<std::chrono::seconds>(
+  const int64_t seconds = std::chrono::duration_cast<std::chrono::seconds>(
       datetime.time_since_epoch()).count();
   const double r = round((static_cast<double>(ms) / 1000 - seconds) * 1000);
   std::lock_guard<std::mutex> lock(g_datetime_mutex);
