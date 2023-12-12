@@ -51,7 +51,8 @@ Socket::Socket(std::string listen_address, std::string port)
   server_fd(-1),
   new_socket(-1),
   m_listen_address(listen_address),
-  m_port(port)
+  m_port(port),
+  listen_socket_address()
 {
     listen_socket_address.sin_family = AF_INET;
     listen_socket_address.sin_port = htons((uint16_t) stoi(port));
