@@ -4,7 +4,7 @@
     This file is part of Trip Server 2, a program to support trip recording and
     itinerary planning.
 
-    Copyright (C) 2022 Frank Dean <frank.dean@fdsd.co.uk>
+    Copyright (C) 2022-2024 Frank Dean <frank.dean@fdsd.co.uk>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@
 #include <chrono>
 #include <iomanip>
 #include <iostream>
+#include <optional>
 #include <map>
 #include <mutex>
 #include <sstream>
@@ -75,7 +76,7 @@ public:
   virtual ~SessionManager() {}
   static void set_session_manager(fdsd::web::SessionManager* session_manager);
   static fdsd::web::SessionManager* get_session_manager();
-  std::pair<bool, std::string> get_user_id_for_session(const std::string& session_id);
+  std::optional<std::string> get_user_id_for_session(const std::string& session_id);
   void save_session(const std::string& session_id, const std::string& user_id);
   void expire_sessions();
   void invalidate_session(const std::string& session_id);

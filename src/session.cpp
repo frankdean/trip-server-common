@@ -4,7 +4,7 @@
     This file is part of Trip Server 2, a program to support trip recording and
     itinerary planning.
 
-    Copyright (C) 2022 Frank Dean <frank.dean@fdsd.co.uk>
+    Copyright (C) 2022-2024 Frank Dean <frank.dean@fdsd.co.uk>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -53,7 +53,7 @@ void Session::set_date(const std::string str_date)
  * \return a std::pair the first element indicating whether the session exists
  * and the second element containing the user ID associated with the session.
  */
-std::pair<bool, std::string>
+std::optional<std::string>
     SessionManager::get_user_id_for_session(const std::string& session_id)
 {
   expire_sessions();
@@ -62,15 +62,15 @@ std::pair<bool, std::string>
   // std::cout << "Searching for session_id: " << session_id << '\n';
   auto f = sessions.find(session_id);
   bool exists = (f != sessions.end());
-  std::string user_id;
+  std::optional<std::string > user_id;
   if (exists) {
     // std::cout << "Found session for user: " << f->second.get_user_id() << '\n';
-    user_id.append(f->second.get_user_id());
+    user_id = f->second.get_user_id();
     f->second.set_last_updated(std::chrono::system_clock::now());
   // } else {
   //   std::cout << "Failed to find session_id \"" << session_id << "\"";
   }
-  return std::make_pair(exists, user_id);
+  return user_id;
 }
 
 void SessionManager::save_session(const std::string& session_id,

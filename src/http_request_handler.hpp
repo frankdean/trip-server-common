@@ -4,7 +4,7 @@
     This file is part of Trip Server 2, a program to support trip recording and
     itinerary planning.
 
-    Copyright (C) 2022 Frank Dean <frank.dean@fdsd.co.uk>
+    Copyright (C) 2022-2024 Frank Dean <frank.dean@fdsd.co.uk>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@
 #include "http_request.hpp"
 #include "logger.hpp"
 #include <memory>
+#include <optional>
 #include <ostream>
 #include <regex>
 #include <string>
@@ -48,6 +49,11 @@ public:
   virtual const char* what() const throw() override {
     return message.c_str();
   }
+};
+
+class ForbiddenException : public BadRequestException {
+public:
+  ForbiddenException(std::string message) : BadRequestException(message) {}
 };
 
 struct UserMessage {
@@ -105,7 +111,8 @@ protected:
                         HTTPServerResponse& response,
                         std::string location) const;
   /// Escapes string with HTML entities
-  std::string x(std::string s) const;
+  // std::string x(std::string s) const;
+  std::string x(std::optional<std::string> s) const;
   virtual std::string get_redirect_uri(const HTTPServerRequest& request) const;
   virtual void append_doc_type(std::ostream& os) const;
   virtual void append_html_start(std::ostream& os) const;
@@ -133,6 +140,9 @@ protected:
    */
   UserMessage get_message(std::string code) const;
   virtual void append_messages_as_html(std::ostream& os) const;
+  void handle_forbidden_request(
+      const HTTPServerRequest& request,
+      HTTPServerResponse& response);
   virtual void handle_bad_request(const HTTPServerRequest& request,
                                   HTTPServerResponse& response);
   /**
@@ -178,6 +188,18 @@ protected:
   void append_value(std::ostream &os, bool append, const T& value) {
     if (append)
       os << value;
+  }
+
+  template <typename T>
+  void append_optional_value(std::ostream &os, bool append, const std::optional<T> optional) {
+    if (append && optional.has_value())
+      os << optional.value();
+  }
+
+  template <typename T>
+  void append_optional_value(std::ostream &os, const std::optional<T> optional) {
+    if (optional.has_value())
+      os << optional.value();
   }
 
 public:

@@ -4,7 +4,7 @@
     This file is part of Trip Server 2, a program to support trip recording and
     itinerary planning.
 
-    Copyright (C) 2022 Frank Dean <frank.dean@fdsd.co.uk>
+    Copyright (C) 2022-2024 Frank Dean <frank.dean@fdsd.co.uk>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -23,6 +23,7 @@
 // #include "debug_utils.hpp"
 #include "http_response.hpp"
 #include "uri_utils.hpp"
+#include "dao_helper.hpp"
 #include <cassert>
 #include <chrono>
 #include <cmath>
@@ -191,49 +192,75 @@ std::string HTTPServerRequest::method_to_str() const
   return "Unknown";
 }
 
-std::string HTTPServerRequest::get_post_param(std::string name) const {
+const std::string HTTPServerRequest::get_post_param(std::string name) const {
   auto search = post_params.find(name);
   if (search != post_params.end()) {
     return search->second;
   }
   return "";
 }
-std::pair<bool, long>
+
+std::optional<long>
     HTTPServerRequest::get_optional_post_param_long(std::string name) const {
   auto search = post_params.find(name);
   if (search != post_params.end() && !search->second.empty()) {
     try {
-      return std::make_pair(true, std::stol(search->second));
+      return std::stol(search->second);
     } catch (const std::invalid_argument &e) {
       std::cerr << e.what() << " converting post param \""
                 << name << "\" -> \"" << search->second << "\"\n";
       throw;
     }
   }
-  return std::pair<bool, long>();
+  return std::optional<long>();
 }
-std::pair<bool, double>
+std::optional<double>
     HTTPServerRequest::get_optional_post_param_double(std::string name) const {
   auto search = post_params.find(name);
   if (search != post_params.end() && !search->second.empty()) {
     try {
-      return std::make_pair(true, std::stod(search->second));
+      return std::stod(search->second);
     } catch (const std::invalid_argument &e) {
       std::cerr << e.what() << " converting post param \""
                 << name << "\" -> \"" << search->second << "\"\n";
       throw;
     }
   }
-  return std::pair<bool, double>();
+  return std::optional<double>();
 }
 
-std::pair<bool, std::string>
-    HTTPServerRequest::get_optional_post_param(std::string name) const {
+std::optional<std::string>
+    HTTPServerRequest::get_optional_post_param(std::string name, bool trim) const {
   auto search = post_params.find(name);
-  if (search != post_params.end()) {
-    return std::make_pair(true, search->second);
+  if (search != post_params.end() && !search->second.empty()) {
+    if (!trim)
+      return search->second;
+    std::string s = search->second;
+    dao_helper::trim(s);
+    if (!s.empty())
+      return s;
   }
-  return std::pair<bool, std::string>();
+  return std::optional<std::string>();
+}
+
+const std::string HTTPServerRequest::get_query_param(std::string name) const
+{
+  auto search = query_params.find(name);
+  if (search != query_params.end()) {
+    return search->second;
+  }
+  return "";
+}
+
+/// Returns the given parameter from either the query or post parameters,
+/// prioritizing POST parameters over GET parameters.
+const std::string HTTPServerRequest::get_param(std::string name) const
+{
+  std::string retval;
+  retval = get_post_param(name);
+  if (retval.empty())
+    retval = get_query_param(name);
+  return retval;
 }
 
 void HTTPServerRequest::handle_multipart_form_data(const std::string &s)

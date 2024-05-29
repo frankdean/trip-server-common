@@ -56,7 +56,9 @@ Additional packages required to build from Git clone:
 
 To re-create the required Gnu autotools files:
 
-	$ autoreconf -i
+	$ aclocal
+	$ autoheader
+	$ autoreconf --install
 	$ automake --add-missing --copy
 
 Optionally install the `uuid-runtime` package which runs a daemon that

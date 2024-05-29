@@ -4,7 +4,7 @@
     This file is part of Trip Server 2, a program to support trip recording and
     itinerary planning.
 
-    Copyright (C) 2022 Frank Dean <frank.dean@fdsd.co.uk>
+    Copyright (C) 2022-2024 Frank Dean <frank.dean@fdsd.co.uk>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -55,14 +55,31 @@ std::string dao_helper::get_value(
 
 /// \return a std::pair with the first value set to true if the key exists in
 /// the passed map exists.  The second pair contains the value.
-std::pair<bool, std::string> dao_helper::get_optional_value(
+std::optional<std::string> dao_helper::get_optional_value(
+    const std::map<std::string, std::string> &params,
+    std::string key)
+{
+  auto search = params.find(key);
+  if (search != params.end() && !search->second.empty())
+    return search->second;
+  return std::optional<std::string>();
+}
+
+/**
+ * \return a std::pair with the first value set to true if the key exists in
+ * the passed map exists.  The second pair contains the value.
+ *
+ * \throws std::invalid_argument if the value cannot be converted to float.
+ */
+std::optional<int> dao_helper::get_optional_int_value(
     const std::map<std::string, std::string> &params,
     std::string key)
 {
   try {
-    return std::make_pair(true, params.at(key));
+    std::string s = params.at(key);
+    return std::stoi(s);
   } catch (const std::out_of_range &e) {
-    return std::make_pair(false, "");
+    return std::optional<int>();
   }
 }
 
@@ -72,15 +89,15 @@ std::pair<bool, std::string> dao_helper::get_optional_value(
  *
  * \throws std::invalid_argument if the value cannot be converted to float.
  */
-std::pair<bool, int> dao_helper::get_optional_int_value(
+std::optional<float> dao_helper::get_optional_float_value(
     const std::map<std::string, std::string> &params,
     std::string key)
 {
   try {
     std::string s = params.at(key);
-    return std::make_pair(true, std::stoi(s));
+    return std::stof(s);
   } catch (const std::out_of_range &e) {
-    return std::make_pair(false, 0);
+    return std::optional<float>();
   }
 }
 
@@ -90,33 +107,17 @@ std::pair<bool, int> dao_helper::get_optional_int_value(
  *
  * \throws std::invalid_argument if the value cannot be converted to float.
  */
-std::pair<bool, float> dao_helper::get_optional_float_value(
+std::optional<double> dao_helper::get_optional_double_value(
     const std::map<std::string, std::string> &params,
     std::string key)
 {
   try {
     std::string s = params.at(key);
-    return std::make_pair(true, std::stof(s));
+    return std::stod(s);
+  } catch (const std::invalid_argument &e) {
+    return std::optional<double>();
   } catch (const std::out_of_range &e) {
-    return std::make_pair(false, 0);
-  }
-}
-
-/**
- * \return a std::pair with the first value set to true if the key exists in
- * the passed map exists.  The second pair contains the value.
- *
- * \throws std::invalid_argument if the value cannot be converted to float.
- */
-std::pair<bool, double> dao_helper::get_optional_double_value(
-    const std::map<std::string, std::string> &params,
-    std::string key)
-{
-  try {
-    std::string s = params.at(key);
-    return std::make_pair(true, std::stod(s));
-  } catch (const std::out_of_range &e) {
-    return std::make_pair(false, 0);
+    return std::optional<double>();
   }
 }
 

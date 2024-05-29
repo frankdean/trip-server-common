@@ -4,7 +4,7 @@
     This file is part of Trip Server 2, a program to support trip recording and
     itinerary planning.
 
-    Copyright (C) 2022 Frank Dean <frank.dean@fdsd.co.uk>
+    Copyright (C) 2022-2024 Frank Dean <frank.dean@fdsd.co.uk>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -41,15 +41,24 @@ namespace utils
 class PgPoolManager : public fdsd::utils::DbErrorHandler {
 public:
   PgPoolManager(std::string connect_string, int pool_size = 10);
+#ifdef HAVE_LIBPQXX7
+  void free_connection(std::shared_ptr<pqxx::connection> connection);
+  std::shared_ptr<pqxx::connection> get_connection();
+#else
   void free_connection(std::shared_ptr<pqxx::lazyconnection> connection);
   std::shared_ptr<pqxx::lazyconnection> get_connection();
+#endif
   void refresh_connections();
   virtual void handle_broken_connection() override;
 private:
   std::string connect_string;
   std::mutex mutex;
   std::condition_variable ready;
+#ifdef HAVE_LIBPQXX7
+  std::queue<std::shared_ptr<pqxx::connection>> queue;
+#else
   std::queue<std::shared_ptr<pqxx::lazyconnection>> queue;
+#endif
 };
 
 } // namespace utils

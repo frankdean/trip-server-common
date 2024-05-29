@@ -2,9 +2,13 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([example], [0.0.1], [frank.dean@fdsd.co.uk])
-AC_COPYRIGHT([Copyright (C) 2022-2023 Frank Dean])
-AM_INIT_AUTOMAKE([-Wall -Werror foreign dist-xz subdir-objects info-in-builddir])
+AC_INIT([example], [0.1.0], [frank.dean@fdsd.co.uk])
+AC_COPYRIGHT([Copyright (C) 2022-2024 Frank Dean])
+dnl May fix an issue where the make files perform a rebuild of configure.ac,
+dnl Makefile.am etc.  Run ./configure with --enable-maintainer-mode to
+dnl automatically re-run autoconf scripts.
+AM_MAINTAINER_MODE
+AM_INIT_AUTOMAKE([-Wall -Werror foreign dist-zip subdir-objects info-in-builddir])
 AC_CONFIG_SRCDIR([src/http_request_factory.cpp])
 AC_CONFIG_HEADERS([config.h])
 
@@ -23,18 +27,21 @@ AC_ARG_ENABLE([keep-alive],
 	[use_keep_alive=no])
 AC_ARG_ENABLE([static-files],
     AS_HELP_STRING([--enable-static-files],
-	[Build to allow serving of static files (default no)]),
+	[Build to allow HTTP serving of static files (default no)]),
 	[use_static_files=${enableval}],
 	[use_static_files=no])
 AC_ARG_ENABLE([directory-listing],
     AS_HELP_STRING([--enable-directory-listing],
-	[Build to allow directory listings (default no)]),
+	[Build to allow HTTP directory listings (default no)]),
 	[use_directory_listing=${enableval}],
 	[use_directory_listing=no])
 
 # Checks for programs.
-AX_CXX_COMPILE_STDCXX(11)
+AC_LANG(C++)
+dnl Must set the compiler to use before AX_CXX_COMPILE_STDCXX_17
+#AC_PROG_CXX([clang++ g++ c++ gpp aCC CC cxx cc++ cl.exe FCC KCC RCC xlC_r xlC])
 AC_PROG_CXX
+AX_CXX_COMPILE_STDCXX_17
 AC_PROG_INSTALL
 
 # Set $host variable
@@ -42,8 +49,17 @@ AC_CANONICAL_HOST
 
 # Checks for libraries.
 AC_SEARCH_LIBS([pthread_create], [pthread])
+
+PKG_CHECK_MODULES([LIBPQXX], [libpqxx >= 7.7.5 libpqxx < 8 libpq >= 11.14],
+			     [AC_SUBST([have_libpqxx7], [1])],
+			     [AC_SUBST([have_libpqxx7], [0])]
+			     )
 if test "x${use_postgresql}" == xyes; then
-   PKG_CHECK_MODULES([LIBPQXX], [libpqxx >= 6.2.5 libpqxx < 7 libpq >= 11.14])
+   if test "${have_libpqxx7}" -eq 1; then
+      AC_DEFINE_UNQUOTED([HAVE_LIBPQXX7], [${have_libpqxx7}], [Build using libpqxx v7 instead of v6])
+   else
+      PKG_CHECK_MODULES([LIBPQXX], [libpqxx >= 6.2.5 libpqxx < 7 libpq >= 11.14])
+   fi
 fi
 
 case $host in
@@ -91,7 +107,7 @@ if test "x${use_keep_alive}" == xyes; then
    AC_DEFINE([ENABLE_KEEP_ALIVE], [1], [Enable HTTP keep alive])
 fi
 
-CXXFLAGS="${CXXFLAGS} -Wsuggest-override ${LIBPQXX_CFLAGS} ${LIBUUID_CFLAGS}"
+CXXFLAGS="${CXXFLAGS} -Wno-deprecated-declarations -Wsuggest-override ${LIBPQXX_CFLAGS} ${LIBUUID_CFLAGS}"
 dnl CPPFLAGS="${CPPFLAGS} ${XXXXXX_CPPFLAGS}"
 LIBS="${LIBS} ${LIBPQXX_LIBS} ${LIBUUID_LIBS}"
 
@@ -99,6 +115,7 @@ LIBS="${LIBS} ${LIBPQXX_LIBS} ${LIBUUID_LIBS}"
 dnl echo "Host_os: ${host_os}"
 dnl echo "Host: ${host}"
 dnl
+AC_HEADER_ASSERT
 dnl The following headers check is just to ensure the headers have been
 dnl installed in addition to the actual library
 if test "x${use_postgresql}" == xyes; then
@@ -122,9 +139,6 @@ if test "x${use_postgresql}" == xyes; then
 
 fi
 
-dnl The following headers check is just to ensure the headers have been
-dnl installed in addition to the actual library
-AC_HEADER_ASSERT
 AC_CHECK_HEADERS([getopt.h])
 if test "x${use_postgresql}" == xyes; then
    AC_CHECK_HEADERS([pqxx/config-public-compiler.h], [have_pqxx_h=yes])
@@ -148,6 +162,8 @@ fi
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_CHECK_HEADER_STDBOOL
+AC_CHECK_HEADER([string],,
+    [AC_MSG_ERROR([Standard C++ library not found])])
 AC_C_INLINE
 
 # Checks for library functions.

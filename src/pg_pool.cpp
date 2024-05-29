@@ -4,7 +4,7 @@
     This file is part of Trip Server 2, a program to support trip recording and
     itinerary planning.
 
-    Copyright (C) 2022 Frank Dean <frank.dean@fdsd.co.uk>
+    Copyright (C) 2022-2024 Frank Dean <frank.dean@fdsd.co.uk>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -41,9 +41,10 @@ PgPoolManager::PgPoolManager(std::string connect_string, int pool_size)
   if (GetOptions::verbose_flag) {
 #ifdef HAVE_BOOST_LOCALE
     // Shows how many database connections are being created for the application
-    std::cout << format(translate("Creating database pool with {1} connection",
-                                  "Creating database pool with {1} connections",
-                                  pool_size)) % pool_size
+    std::cout << boost::locale::format(
+        translate("Creating database pool with {1} connection",
+                  "Creating database pool with {1} connections",
+                  pool_size)) % pool_size
               << '\n';
 #else
     std::cout << "Creating database pool with "
@@ -53,11 +54,19 @@ PgPoolManager::PgPoolManager(std::string connect_string, int pool_size)
   }
 
   for (int i = 0; i < pool_size; i++) {
+#ifdef HAVE_LIBPQXX7
+    queue.emplace(std::make_shared<connection>(connect_string));
+#else
     queue.emplace(std::make_shared<lazyconnection>(connect_string));
+#endif
   }
 }
 
+#ifdef HAVE_LIBPQXX7
+void PgPoolManager::free_connection(std::shared_ptr<connection> connection)
+#else
 void PgPoolManager::free_connection(std::shared_ptr<lazyconnection> connection)
+#endif
 {
   std::unique_lock<std::mutex> lock(mutex);
   queue.push(connection);
@@ -67,7 +76,11 @@ void PgPoolManager::free_connection(std::shared_ptr<lazyconnection> connection)
   ready.notify_one();
 }
 
+#ifdef HAVE_LIBPQXX7
+std::shared_ptr<connection> PgPoolManager::get_connection()
+#else
 std::shared_ptr<lazyconnection> PgPoolManager::get_connection()
+#endif
 {
   std::unique_lock<std::mutex> lock(mutex);
   while (queue.empty())
@@ -91,7 +104,11 @@ void PgPoolManager::refresh_connections()
   auto size = queue.size();
   for (int i = 0; i < size; i++) {
     queue.pop();
+#ifdef HAVE_LIBPQXX7
+    queue.emplace(std::make_shared<connection>(connect_string));
+#else
     queue.emplace(std::make_shared<lazyconnection>(connect_string));
+#endif
   }
   if (size == 1)
     syslog(LOG_INFO, "Refreshed %lu database connection", size);

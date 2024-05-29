@@ -4,7 +4,7 @@
     This file is part of Trip Server 2, a program to support trip recording and
     itinerary planning.
 
-    Copyright (C) 2022 Frank Dean <frank.dean@fdsd.co.uk>
+    Copyright (C) 2022-2024 Frank Dean <frank.dean@fdsd.co.uk>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -115,10 +115,16 @@ std::string BaseRequestHandler::get_mime_type(std::string extension) const
   return "application/octet-stream";
 }
 
+// Escapes string with HTML entities
+// std::string BaseRequestHandler::x(std::string s) const
+// {
+//  return HTTPServerResponse::x(s);
+// }
+
 /// Escapes string with HTML entities
-std::string BaseRequestHandler::x(std::string s) const
+std::string BaseRequestHandler::x(std::optional<std::string> s) const
 {
-  return HTTPServerResponse::x(s);
+  return s.has_value() ? HTTPServerResponse::x(s.value()) : "";
 }
 
 std::string BaseRequestHandler::get_redirect_uri(
@@ -540,6 +546,16 @@ void BaseRequestHandler::create_full_html_page_for_standard_response(
   set_content_headers(response);
 }
 
+void BaseRequestHandler::handle_forbidden_request(
+    const HTTPServerRequest& request,
+    HTTPServerResponse& response)
+{
+  response.content.clear();
+  response.content.str("");
+  response.status_code = HTTPStatus::forbidden;
+  create_full_html_page_for_standard_response(response);
+}
+
 void BaseRequestHandler::handle_bad_request(
     const HTTPServerRequest& request,
     HTTPServerResponse& response)
@@ -584,6 +600,7 @@ void HTTPRequestHandler::handle_request(
   }
   preview_request(request, response);
   if (response.status_code != HTTPStatus::found &&
+      response.status_code != HTTPStatus::forbidden &&
       response.status_code != HTTPStatus::bad_request &&
       response.status_code != HTTPStatus::internal_server_error
     ) {
@@ -611,6 +628,10 @@ void HTTPRequestHandler::handle_request(
         append_html_end(response.content);
         set_content_headers(response);
       }
+    } catch (const ForbiddenException &e) {
+      std::cerr << "ForbiddenException occurred handling request: "
+                << e.what() << '\n';
+      handle_forbidden_request(request, response);
     } catch (const BadRequestException &e) {
       std::cerr << "BadRequestException occurred handling request: "
             << e.what() << '\n';
@@ -754,6 +775,14 @@ void AuthenticatedRequestHandler::preview_request(
 
     if (!user_id.empty())
       do_preview_request(request, response);
+  } catch (const ForbiddenException &e) {
+    std::cerr << "ForbiddenException occurred previewing request: "
+              << e.what() << '\n';
+    handle_forbidden_request(request, response);
+  } catch (const BadRequestException &e) {
+    std::cerr << "BadRequestException occurred previewing request: "
+              << e.what() << '\n';
+    handle_bad_request(request, response);
   } catch (const std::invalid_argument &e) {
     std::cerr << "std::invalid_argument exception occurred previewing request: "
               << e.what() << '\n';

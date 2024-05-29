@@ -4,7 +4,7 @@
     This file is part of Trip Server 2, a program to support trip recording and
     itinerary planning.
 
-    Copyright (C) 2022 Frank Dean <frank.dean@fdsd.co.uk>
+    Copyright (C) 2022-2024 Frank Dean <frank.dean@fdsd.co.uk>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@
 #include <chrono>
 #include <ctime>
 #include <map>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -38,16 +39,16 @@ struct dao_helper {
                 std::string key);
   static std::string get_value(const std::map<std::string, std::string> &params,
                                std::string key, std::string default_value = "");
-  static std::pair<bool, int> get_optional_int_value(
+  static std::optional<int> get_optional_int_value(
     const std::map<std::string, std::string> &params,
     std::string key);
-  static std::pair<bool, std::string> get_optional_value(
+  static std::optional<std::string> get_optional_value(
       const std::map<std::string, std::string> &params,
       std::string key);
-  static std::pair<bool, float> get_optional_float_value(
+  static std::optional<float> get_optional_float_value(
       const std::map<std::string, std::string> &params,
       std::string key);
-  static std::pair<bool, double> get_optional_double_value(
+  static std::optional<double> get_optional_double_value(
     const std::map<std::string, std::string> &params,
     std::string key);
   int get_int(const std::map<std::string, std::string> &params,

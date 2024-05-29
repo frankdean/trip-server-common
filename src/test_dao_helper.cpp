@@ -4,7 +4,7 @@
     This file is part of Trip Server 2, a program to support trip recording and
     itinerary planning.
 
-    Copyright (C) 2022 Frank Dean <frank.dean@fdsd.co.uk>
+    Copyright (C) 2022-2024 Frank Dean <frank.dean@fdsd.co.uk>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 */
 #include "dao_helper.cpp"
 #include <iostream>
+#include <optional>
 #include <string>
 
 using namespace fdsd::utils;
@@ -79,6 +80,25 @@ bool test_trim()
   return retval;
 }
 
+bool test_trim_optional()
+{
+  const std::string head = "  \t\t  ";
+  const std::string tail = " \r\n\t   ";
+  const std::string expected("1 2   3 4 5");
+  const std::optional<std::string> test = head + expected + tail;
+  std::optional<std::string> left_test = test;
+  std::optional<std::string> right_test = test;
+  std::optional<std::string> all_test = test;
+  dao_helper::ltrim(left_test.value());
+  dao_helper::rtrim(right_test.value());
+  dao_helper::trim(all_test.value());
+  const bool retval =
+    left_test.has_value() && left_test.value() == expected + tail &&
+    right_test.has_value() && right_test == head + expected &&
+    all_test.has_value() && all_test.value() == expected;
+  return retval;
+}
+
 bool test_to_sql_array_strings_01()
 {
   const std::string expected = "{\"Test1\"}";
@@ -130,6 +150,25 @@ bool test_to_sql_array_strings_03()
   return retval;
 }
 
+bool test_optional_string_append()
+{
+  const std::string expected = "test more";
+  std::optional<std::string> test = "test";
+  test->push_back(' ');
+  test->append("more");
+  bool retval = test.value() == expected;
+  if (!retval) {
+    std::cerr << "Expected \"" << expected
+             << "\", but was \"" << test.value() << "\"\n";
+  } else {
+    retval = (test == expected);
+    if (!retval) {
+      std::cerr << "std::optional<std::string> comparison failed\n";
+    }
+  }
+  return retval;
+}
+
 int main(void)
 {
   try {
@@ -137,9 +176,11 @@ int main(void)
         test_convert_tz_01()
         && test_convert_tz_02()
         && test_trim()
+        && test_trim_optional()
         && test_to_sql_array_strings_01()
         && test_to_sql_array_strings_02()
         && test_to_sql_array_strings_03()
+        && test_optional_string_append()
       );
   } catch (const std::exception &e) {
     std::cerr << "Tests failed with: " << e.what() << '\n';

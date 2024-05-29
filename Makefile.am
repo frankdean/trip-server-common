@@ -1,6 +1,6 @@
 SUBDIRS = src tests
 
-EXTRA_DIST = .gitignore \
+EXTRA_DIST = .gitignore stamp-h1 \
 	Vagrantfile \
 	provisioning/bootconfig.sh \
 	provisioning/bootstrap.sh \
