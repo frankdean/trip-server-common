@@ -19,7 +19,9 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+#if ! BUILD_FOR_IOS
 #include "../config.h"
+#endif
 #include "file_utils.hpp"
 #include <algorithm>
 #include <iostream>
@@ -43,7 +45,7 @@ std::mutex FileUtils::mutex;
 
 /**
  * Strips the characters from the passed path if they match the passed prefix.
- * \return that stripped path, without a leading path separator.
+ * Also removes any leading path separator.
  */
 void FileUtils::strip_prefix(std::string prefix, std::string& path)
 {
@@ -57,7 +59,7 @@ void FileUtils::strip_prefix(std::string prefix, std::string& path)
   if (x == std::string::npos || x != 0)
     return;
 
-  int n = prefix.length();
+  // auto n = prefix.length();
   // std::cout << "Erasing first " << n << " characters\n";
   path.erase(0, prefix.length());
   if (!path.empty() && path.substr(0, 1) == path_separator)

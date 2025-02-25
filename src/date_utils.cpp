@@ -26,7 +26,9 @@
 
 using namespace fdsd::utils;
 
+#if ! BUILD_FOR_IOS
 Logger DateTime::logger = Logger("date_utils", std::clog, Logger::info);
+#endif
 
 const std::regex DateTime::numeric_regex = std::regex("-?[0-9]+(\\.{1})?([0-9]+)?");
 
@@ -89,15 +91,16 @@ std::string DateTime::convert_rfc822_to_iso8601(
     std::tm tm {};
     is >> std::get_time(&tm, "%d %b %Y %T");
     if (is.fail())
-      logger << Logger::debug << "Parsing of date failed" << Logger::endl;
+      START_DEBUG_LOGGER << "Parsing of date failed" << END_LOGGER;
     std::ostringstream os;
     os << std::put_time(&tm, "%FT%T");
     date = os.str();
   } catch (const std::invalid_argument& e) {
-    logger << Logger::debug
-           << "Error converting date: \""
-           << date
-           << "\": " << e.what() << Logger::endl;
+    START_DEBUG_LOGGER
+      << "Error converting date: \""
+      << date
+      << "\": " << e.what()
+      << END_LOGGER;
     datetime = std::chrono::system_clock::from_time_t(-1);
   }
   // The date should now be in the ISO 8601 format.
@@ -120,15 +123,15 @@ std::string DateTime::convert_asctime_to_iso8601(
     std::tm tm {};
     is >> std::get_time(&tm, "%d %b %Y %T");
     if (is.fail())
-      logger << Logger::debug << "Parsing of date failed" << Logger::endl;
+      START_DEBUG_LOGGER << "Parsing of date failed" << END_LOGGER;
     std::ostringstream os;
     os << std::put_time(&tm, "%FT%T");
     date = os.str();
   } catch (const std::invalid_argument& e) {
-    logger << Logger::debug
-           << "Error converting date: \""
-           << date
-           << "\": " << e.what() << Logger::endl;
+    START_DEBUG_LOGGER
+      << "Error converting date: \""
+      << date
+      << "\": " << e.what() << END_LOGGER;
     datetime = std::chrono::system_clock::from_time_t(-1);
   }
   // The date should now be in the ISO 8601 format.
@@ -148,15 +151,15 @@ std::string DateTime::convert_dd_mon_yyyy_hh_mm_ss_to_iso8601(
     std::tm tm {};
     is >> std::get_time(&tm, "%d %b %Y %T");
     if (is.fail())
-      logger << Logger::debug << "Parsing of date failed" << Logger::endl;
+      START_DEBUG_LOGGER << "Parsing of date failed" << END_LOGGER;
     std::ostringstream os;
     os << std::put_time(&tm, "%FT%T");
     date = os.str();
   } catch (const std::invalid_argument& e) {
-    logger << Logger::debug
-           << "Error converting date: \""
-           << date
-           << "\": " << e.what() << Logger::endl;
+    START_DEBUG_LOGGER
+      << "Error converting date: \""
+      << date
+      << "\": " << e.what() << END_LOGGER;
     datetime = std::chrono::system_clock::from_time_t(-1);
   }
   // The date should now be in the ISO 8601 format.
@@ -254,10 +257,10 @@ void DateTime::init(std::string date)
       // std::cout << "Time after adjustment " << to_string() << '\n';
     }
   } else {
-    logger << Logger::debug
-           << "Error converting date: \""
-           << date
-           << "\"" << Logger::endl;
+    START_DEBUG_LOGGER
+      << "Error converting date: \""
+      << date
+      << "\"" << END_LOGGER;
     throw std::invalid_argument("Unable to parse date");
   }
 }

@@ -22,7 +22,17 @@
 #ifndef DATE_UTILS_HPP
 #define DATE_UTILS_HPP
 
+#if ! BUILD_FOR_IOS
+#define START_DEBUG_LOGGER logger << Logger::debug
+#define END_LOGGER Logger::endl
+#else
+#define START_DEBUG_LOGGER std::cerr
+#define END_LOGGER std::endl
+#endif
+
+#if ! BUILD_FOR_IOS
 #include "logger.hpp"
+#endif
 #include <chrono>
 #include <cstdint>
 #include <iomanip>
@@ -58,7 +68,9 @@ namespace utils
     std::chrono::system_clock::time_point datetime;
     // std::time_t datetime;
     std::tm convert(std::time_t t) const;
+    #if ! BUILD_FOR_IOS
     static Logger logger;
+    #endif
   public:
     static const std::regex numeric_regex;
     // static const std::regex valid_yyyy_mm_dd_regex;
