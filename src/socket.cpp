@@ -144,8 +144,7 @@ int Socket::wait_connection(int timeout)
   poll_fd.fd = server_fd;
   poll_fd.events = POLLIN;
   poll_fd.revents = 0;
-  struct pollfd fdinfo[1] = { { 0 } };
-  fdinfo[0] = poll_fd;
+  struct pollfd fdinfo[1] = { { poll_fd } };
   // logger << Logger::debug << "Polling... " << server_fd << Logger::endl;
   int nfds = poll(fdinfo,
                   1,
@@ -303,8 +302,7 @@ bool SocketHandler::is_more_data_to_read(int timeout) const
   poll_fd.fd = m_fd;
   poll_fd.events = POLLIN;
   poll_fd.revents = 0;
-  struct pollfd fdinfo[1] = { { 0 } };
-  fdinfo[0] = poll_fd;
+  struct pollfd fdinfo[1] = { { poll_fd } };
 #ifdef DEBUG_SOCKET_CPP
   auto start = std::chrono::system_clock::now();
 #endif // DEBUG_SOCKET_CPP
@@ -431,8 +429,7 @@ void SocketHandler::send(std::ostringstream& os) const
       poll_fd.fd = m_fd;
       poll_fd.events = POLLOUT;
       poll_fd.revents = 0;
-      struct pollfd fdinfo[1] = { { 0 } };
-      fdinfo[0] = poll_fd;
+      struct pollfd fdinfo[1] = { { poll_fd } };
       int nfds = poll(fdinfo,
                       1,
                       10000);
@@ -746,7 +743,7 @@ std::string SocketHandler::read()
     // if (logger.is_level(Logger::debug))
     //   logger << Logger::debug
     //          << "Reading buffer from socket " << m_fd << Logger::endl;
-    int valread = ::read(m_fd, buffer, sizeof(buffer));
+    ssize_t valread = ::read(m_fd, buffer, sizeof(buffer));
     if (previous_read < 0 && valread > 0) {
 #ifdef DEBUG_SOCKET_CPP
       if (logger.is_level(Logger::debug) && eagain_count > 0)
@@ -777,7 +774,7 @@ std::string SocketHandler::read()
         // logger << Logger::debug << "<< end of buffer >>" << Logger::endl;
       }
       request_body.append(buffer, valread);
-      if (valread < sizeof(buffer)) {
+      if (valread < (ssize_t) sizeof(buffer)) {
         short_read_count++;
         // We definitely see the number of bytes being read being less than the
         // buffer size, but in fact there is actually more data to be read, so

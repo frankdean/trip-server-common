@@ -41,6 +41,7 @@ namespace utils
 class PgPoolManager : public fdsd::utils::DbErrorHandler {
 public:
   PgPoolManager(std::string connect_string, int pool_size = 10);
+  virtual ~PgPoolManager() {}
 #ifdef HAVE_LIBPQXX7
   void free_connection(std::shared_ptr<pqxx::connection> connection);
   std::shared_ptr<pqxx::connection> get_connection();

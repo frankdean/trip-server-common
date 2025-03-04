@@ -143,8 +143,7 @@ std::string DateTime::convert_asctime_to_iso8601(
  *
  * \return the passed date in ISO8601 format (yyyy-mm-ddThh:mm:ss)
  */
-std::string DateTime::convert_dd_mon_yyyy_hh_mm_ss_to_iso8601(
-    const std::smatch &m, std::string date)
+std::string DateTime::convert_dd_mon_yyyy_hh_mm_ss_to_iso8601(std::string date)
 {
   try {
     std::istringstream is(date);
@@ -193,7 +192,7 @@ void DateTime::init(std::string date)
   }
   // If not ISO 8601, then try converting as dd_mon_yyyy_hh_mm_ss
   if (!is_iso_8601) {
-    date = convert_dd_mon_yyyy_hh_mm_ss_to_iso8601(m, date);
+    date = convert_dd_mon_yyyy_hh_mm_ss_to_iso8601(date);
     is_iso_8601 = std::regex_match(date, m, iso8601_regex);
   }
   // Convert ISO 8601 formatted date into internal value.

@@ -86,9 +86,9 @@ struct UserMessage {
     {}
   UserMessage(std::string message, std::string code, Type type)
     :
-    message(message),
+    type(type),
     code(code),
-    type(type)
+    message(message)
     {}
   ~UserMessage()
     {}
@@ -122,9 +122,13 @@ protected:
   virtual void append_head_content(std::ostream& os) const;
   virtual void append_head_end(std::ostream& os) const;
   virtual void append_body_start(std::ostream& os) const;
-  virtual void append_header_content(std::ostream& os) const {}
+  virtual void append_header_content(std::ostream& os) const {
+    (void)os; //unsused
+  }
   virtual void append_footer_content(std::ostream& os) const;
-  virtual void append_pre_body_end(std::ostream& os) const {}
+  virtual void append_pre_body_end(std::ostream& os) const {
+    (void)os; //unsused
+  }
   virtual void append_body_end(std::ostream& os) const;
   virtual void append_html_end(std::ostream& os) const;
   virtual void set_content_headers(HTTPServerResponse& response) const;
@@ -293,7 +297,10 @@ protected:
   /// Actually writing to the response stream.
   virtual void preview_request(
       const HTTPServerRequest& request,
-      HTTPServerResponse& response) {}
+      HTTPServerResponse& response) {
+    (void)request; // unused
+    (void)response; // unused
+  }
 public:
   HTTPRequestHandler(std::string uri_prefix) : BaseRequestHandler(uri_prefix) {}
   virtual ~HTTPRequestHandler() {}
@@ -405,7 +412,9 @@ public:
     return "HTTPNotFoundRequestHandler";
   }
   virtual bool can_handle(
-      const fdsd::web::HTTPServerRequest& request) const override { return false; }
+      const fdsd::web::HTTPServerRequest& request) const override {
+    (void) request; // unused
+    return false; }
 };
 
 } // namespace web

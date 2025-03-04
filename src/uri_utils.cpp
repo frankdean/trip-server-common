@@ -169,7 +169,7 @@ std::string UriUtils::uri_encode_rfc_1738(std::string s)
 std::pair<std::string, std::string> UriUtils::split_pair(std::string source, std::string with)
 {
 
-  size_t pos = source.find_first_of(with);
+  std::string::size_type pos = source.find_first_of(with);
   if (pos == std::string::npos) {
     return std::make_pair(source, "");
   }
@@ -189,7 +189,7 @@ std::pair<std::string, std::string> UriUtils::split_pair(std::string source, std
 std::vector<std::string> UriUtils::split_params(std::string qs, std::string with)
 {
   std::vector<std::string> retval;
-  size_t pos = 0;
+  std::string::size_type pos = 0;
   while (pos != std::string::npos) {
     pos = qs.find_first_of(with);
     if (pos != std::string::npos) {
@@ -211,7 +211,7 @@ std::vector<std::string> UriUtils::split_params(std::string qs, std::string with
 std::map<std::string, std::string> UriUtils::get_query_params(const std::string uri) {
   std::map<std::string, std::string> retval;
   std::string s;
-  size_t pos = uri.find_last_of('?');
+  std::string::size_type pos = uri.find_last_of('?');
   if (pos != std::string::npos) {
     s = uri.substr(pos + 1);
     // std::cout << "Found ? at " << pos << '\n';

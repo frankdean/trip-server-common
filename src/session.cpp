@@ -93,7 +93,6 @@ void SessionManager::clear_sessions()
 void SessionManager::expire_sessions()
 {
   std::lock_guard<std::mutex> lock(session_mutex);
-  std::chrono::system_clock clock;
   auto now = std::chrono::system_clock::now();
   for (auto session = sessions.begin(); session != sessions.end(); ) {
     auto diff = now - session->second.get_last_updated_time_point();

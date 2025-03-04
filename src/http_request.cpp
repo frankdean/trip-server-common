@@ -54,16 +54,16 @@ HTTPServerRequest::HTTPServerRequest()
     multipart_state(multipart_state_type::ready),
     boundary_key(),
     current_part(),
-    _keep_alive(false),
+    query_params(),
     post_params(),
     method(HTTPMethod::unknown),
     content_type(ContentType::unknown),
+    multiparts(),
     user_id(),
     content(),
     uri("/"),
     protocol(),
-    headers(),
-    query_params()
+    headers()
 {
 }
 
@@ -72,7 +72,7 @@ HTTPServerRequest::HTTPServerRequest(const std::string &http_request)
     multipart_state(multipart_state_type::ready),
     boundary_key(),
     current_part(),
-    _keep_alive(false),
+    query_params(),
     post_params(),
     method(HTTPMethod::unknown),
     content_type(ContentType::unknown),
@@ -80,8 +80,7 @@ HTTPServerRequest::HTTPServerRequest(const std::string &http_request)
     content(),
     uri("/"),
     protocol(),
-    headers(),
-    query_params()
+    headers()
 {
   // std::cout << ">>>>\n"
   //           << http_request
@@ -430,7 +429,7 @@ std::string HTTPServerRequest::get_cookie(const std::string cookie_name) const {
     return "";
   }
   std::vector<std::string> cookies = UriUtils::split_params(f->second, ";");
-  for (const std::string cp : cookies) {
+  for (const std::string &cp : cookies) {
     auto nv = UriUtils::split_pair(cp, "=");
     if (nv.first.front() == ' ') {
       nv.first.erase(0, 1);

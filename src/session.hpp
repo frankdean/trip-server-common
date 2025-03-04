@@ -69,10 +69,15 @@ protected:
   /// Map with key of session_id and value of user_id
   fdsd::web::session_map sessions;
   static fdsd::web::SessionManager* session_manager;
-  virtual void persist_invalidated_session(std::string session_id) {}
-  virtual void session_updated(std::string session_id, const Session& session) const {}
+  virtual void persist_invalidated_session(std::string session_id) {
+    (void)session_id;
+  }
+  virtual void session_updated(std::string session_id, const Session& session) const {
+    (void)session_id; // unused
+    (void)session;
+  }
 public:
-  SessionManager() : sessions(), session_mutex() {}
+  SessionManager() : session_mutex(),sessions() {}
   virtual ~SessionManager() {}
   static void set_session_manager(fdsd::web::SessionManager* session_manager);
   static fdsd::web::SessionManager* get_session_manager();

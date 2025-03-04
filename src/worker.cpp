@@ -79,11 +79,11 @@ bool Worker::handle_socket_read(fdsd::web::SocketHandler& socket_handler)
     //         << "\n<< end of content >>\n"
     //         << Logger::endl;
 
-    int content_length = -1;
+    // int content_length = -1;
     try {
       std::string s = request.get_header("Content-Length");
-      if (!s.empty())
-        content_length = std::stoi(s);
+      // if (!s.empty())
+      //   content_length = std::stoi(s);
     } catch (const std::invalid_argument& e) {
       logger << Logger::debug << std::this_thread::get_id()
              << " Invalid content length header" << Logger::endl;

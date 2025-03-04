@@ -49,13 +49,13 @@ private:
   /// The number of pages
   std::uint32_t m_page_count;
   /// The number of items per page
-  unsigned int m_items_per_page;
+  std::uint32_t m_items_per_page;
   /// The number of buttons to create
-  unsigned int m_page_button_count;
+  std::uint32_t m_page_button_count;
   /// The first page in the current range
-  std::int32_t m_begin_range;
+  std::uint32_t m_begin_range;
   /// The last page in the current range
-  std::int32_t m_end_range;
+  std::uint32_t m_end_range;
   /// The format string to use to create the href containing the page number.
   /// Deprecated, use m_page_number_query_param_key instead.
   std::string m_href_url;
@@ -79,15 +79,15 @@ public:
   // Deprecated - use the constructor below that takes the query params
   Pagination(std::string href_url_format_string,
              std::uint32_t total = std::numeric_limits<std::uint32_t>::max(),
-             unsigned int items_per_page = 10,
-             unsigned int buttons = 5,
+             std::uint32_t items_per_page = 10,
+             std::uint32_t buttons = 5,
              bool show_first_last = true,
              bool show_prev_next = true);
   Pagination(std::string page_url,
              std::map<std::string, std::string> query_params,
              std::uint32_t total = std::numeric_limits<std::uint32_t>::max(),
-             unsigned int items_per_page = 10,
-             unsigned int buttons = 5,
+             std::uint32_t items_per_page = 10,
+             std::uint32_t buttons = 5,
              bool show_first_last = true,
              bool show_prev_next = true,
              std::string page_number_query_param_key = "page");
@@ -110,7 +110,7 @@ public:
   std::uint32_t get_offset() const {
     return m_items_per_page * (m_current_page - 1);
   }
-  unsigned int get_limit() const {
+  std::uint32_t get_limit() const {
     return m_items_per_page;
   }
   std::uint32_t get_page_count() const {
@@ -127,7 +127,7 @@ public:
   void show_prev_next(bool show) {
     m_show_prev_next = show;
   }
-  void set_items_per_page(unsigned int count) {
+  void set_items_per_page(std::uint32_t count) {
     m_items_per_page = count;
     // Recalculate number of pages
     set_total(m_total);

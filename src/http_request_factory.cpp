@@ -157,6 +157,8 @@ void HTTPRequestFactory::refresh_session(
     const HTTPServerRequest& request,
     HTTPServerResponse& response) const
 {
+  (void)request; // unused
+  (void)response; // unused
   // persist_session();
   // std::string cookie_name = get_session_id_cookie_name();
   // std::string session_id = request.get_cookie(cookie_name);
@@ -166,6 +168,7 @@ std::unique_ptr<BaseRequestHandler>
     HTTPRequestFactory::handle_pre_login(HTTPServerRequest &request,
                                          HTTPServerResponse& response) const
 {
+  (void)response; // unused
   for (const auto& h : pre_login_handlers) {
     if (logger.is_level(Logger::debug))
       logger << Logger::debug << "Checking whether \"" << h->get_handler_name()
@@ -186,6 +189,7 @@ std::unique_ptr<BaseRequestHandler>
     HTTPRequestFactory::handle_post_login(HTTPServerRequest &request,
                                           HTTPServerResponse& response) const
 {
+  (void)response; // unused
   for (const auto& h : post_login_handlers) {
     if (logger.is_level(Logger::debug))
       logger << Logger::debug << "Checking whether \"" << h->get_handler_name()

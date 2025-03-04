@@ -43,7 +43,6 @@ Configuration::Configuration(std::string filename)
     throw Configuration::FileNotFoundException(filename);
   }
   std::string s;
-  int i = 0;
   while (std::getline(cin, s)) {
     // Ignore lines starting with '#'
     if (s.empty() || s[0] == '#')

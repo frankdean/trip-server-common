@@ -76,6 +76,7 @@ void BaseRequestHandler::redirect(const HTTPServerRequest& request,
                                   HTTPServerResponse& response,
                                   std::string location) const
 {
+  (void)request; // unused
   response.status_code = HTTPStatus::found;
   response.set_header("Location", location);
 }
@@ -85,7 +86,7 @@ void BaseRequestHandler::pad_left(std::string &s,
                                    std::string::size_type length,
                                    char c) const
 {
-  int n = length - s.length();
+  std::string::size_type n = length - s.length();
   std::string padding;
   if (n > 0) {
     while (padding.length() < n)
@@ -486,32 +487,32 @@ void BaseRequestHandler::append_messages_as_html(std::ostream& os) const
 {
   if (messages.size() == 0)
     return;
-  for (const auto m : messages) {
+  for (const auto &m : messages) {
     os
       << "  <div class=\"";
     switch (m.type) {
-      case m.info:
+      case UserMessage::info:
         os << "alert alert-info";
         break;
-      case m.warn:
+      case UserMessage::warn:
         os << "alert alert-warning";
         break;
-      case m.error:
+      case UserMessage::error:
         os << "alert alert-danger";
         break;
-      case m.success:
+      case UserMessage::success:
         os << "alert alert-success";
         break;
-      case m.light:
+      case UserMessage::light:
         os << "alert alert-light";
         break;
-      case m.dark:
+      case UserMessage::dark:
         os << "alert alert-dark";
         break;
-      case m.primary:
+      case UserMessage::primary:
         os << "alert alert-primary";
         break;
-      case m.secondary:
+      case UserMessage::secondary:
         os << "alert alert-secondary";
         break;
     }
@@ -550,6 +551,7 @@ void BaseRequestHandler::handle_forbidden_request(
     const HTTPServerRequest& request,
     HTTPServerResponse& response)
 {
+  (void)request; // unused
   response.content.clear();
   response.content.str("");
   response.status_code = HTTPStatus::forbidden;
@@ -560,6 +562,7 @@ void BaseRequestHandler::handle_bad_request(
     const HTTPServerRequest& request,
     HTTPServerResponse& response)
 {
+  (void)request; // unused
   response.content.clear();
   response.content.str("");
   response.status_code = HTTPStatus::bad_request;
@@ -956,6 +959,7 @@ void HTTPNotFoundRequestHandler::do_handle_request(
     const HTTPServerRequest& request,
     HTTPServerResponse& response)
 {
+  (void)request; // unused
   response.status_code = HTTPStatus::not_found;
   response.generate_standard_response(HTTPStatus::not_found);
 }

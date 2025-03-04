@@ -381,7 +381,7 @@ bool test_get_html_button_count_3_pages()
   std::stringstream os;
   const Pagination p("./test/?page=%u", 58, 20);
   p.get_html(os);
-  // std::cout << os.str() << '\n';
+  std::cout << "Navigation div:\n" << os.str() << '\n';
   int pages = 0;
   int previous = 0;
   int next = 0;
@@ -398,7 +398,7 @@ bool test_get_html_button_count_3_pages()
     if (std::regex_match(buf, next_regex))
       next++;
   }
-  // std::cout << pages << " pages\n";
+  std::cout << pages << " pages\n";
   const int expected_page_count = 3;
   const bool retval = pages == expected_page_count &&
     next == 1 &&

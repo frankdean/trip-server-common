@@ -52,12 +52,11 @@ protected:
   virtual std::shared_ptr<HTTPRequestFactory> get_request_factory() const = 0;
 public:
   Application(std::string listen_address,
-              std::string port,
-              std::string locale = "");
+              std::string port);
   virtual ~Application();
   void read_config_file(std::string config_filename);
   std::string get_config_value(std::string key, std::string default_value="");
-  virtual void initialize_locale(std::string locale_str) const;
+  virtual void initialize_locale() const;
   static void signalHandler(int signum);
   void run();
   void stop_workers() const;

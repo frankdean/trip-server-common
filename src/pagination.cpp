@@ -34,8 +34,8 @@ Logger Pagination::logger("pagination", std::clog, Logger::info);
 Pagination::Pagination(
     std::string href_url_format_string,
     std::uint32_t total,
-    unsigned int items_per_page,
-    unsigned int buttons,
+    std::uint32_t items_per_page,
+    std::uint32_t buttons,
     bool show_first_last,
     bool show_prev_next) :
   m_show_first_last(show_first_last),
@@ -75,8 +75,8 @@ Pagination::Pagination(
     std::string page_url,
     std::map<std::string, std::string> query_params,
     std::uint32_t total,
-    unsigned int items_per_page,
-    unsigned int buttons,
+    std::uint32_t items_per_page,
+    std::uint32_t buttons,
     bool show_first_last,
     bool show_prev_next,
     std::string page_number_query_param_key) :
@@ -100,17 +100,21 @@ void Pagination::update_page_ranges()
 {
   // std::cout << "\nupdate ranges for page " << m_current_page << '\n';
   // std::cout << "adjusted button count is " << m_page_button_count << '\n';
-  m_begin_range = m_current_page - m_page_button_count / 2;
+  std::int32_t begin_range = m_current_page - m_page_button_count / 2;
   m_end_range = m_current_page + m_page_button_count / 2;
-  if (m_begin_range < 1) {
+  if (begin_range < 1) {
     m_begin_range = 1;
     m_end_range = m_page_button_count;
+  } else {
+    m_begin_range = begin_range;
   }
   if (m_end_range > m_page_count) {
     m_end_range = m_page_count;
-    m_begin_range = m_end_range - m_page_button_count;
-    if (m_begin_range < 1)
+    begin_range = m_end_range - m_page_button_count;
+    if (begin_range < 1)
       m_begin_range = 1;
+    else
+      m_begin_range = begin_range;
   }
   // std::cout << "after update ranges current page is " << m_current_page << '\n'
   //           << "range is between " << m_begin_range << " and "
@@ -130,7 +134,7 @@ std::uint32_t Pagination::previous()
 
 std::uint32_t Pagination::next() {
   // std::cout << "next() 01" << m_current_page << '\n';
-  if (m_total < 0 || m_current_page < m_page_count)
+  if (m_current_page < m_page_count)
     m_current_page++;
   // std::cout << "next() 02" << m_current_page << '\n';
   update_page_ranges();
@@ -243,7 +247,7 @@ void Pagination::get_html(std::ostream& os) const
     }
   }
   // std::cout << "Last page: " << m_page_count << '\n';
-  for (std::int32_t i = m_begin_range; i <= m_end_range; i++) {
+  for (std::uint32_t i = m_begin_range; i <= m_end_range; i++) {
     if (i == m_current_page) {
       os
         << "    <li class=\"page-item active\"><a class=\"page-link\" href=\"";

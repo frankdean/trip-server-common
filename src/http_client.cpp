@@ -146,7 +146,7 @@ void HttpClient::parse_response(std::vector<char> &response)
   try {
     std::string length_str = headers.at("Content-Length");
     try {
-      long expected_length = std::stol(length_str);
+      std::string::size_type expected_length = std::stol(length_str);
       if (expected_length != body.size()) {
         std::cerr << "Content-Length: " << expected_length
                   << ", but body size is: " << body.size() << '\n';
@@ -176,7 +176,7 @@ void HttpClient::perform_request()
     << options.path
     << " HTTP/1.0\r\n";
   // std::cout << "There are " << options.headers.size() << " headers\n";
-  for (const auto h : options.headers)
+  for (const auto &h : options.headers)
     request << h.first << ": " << h.second << "\r\n";
   request
     << "\r\n";
@@ -186,7 +186,6 @@ void HttpClient::perform_request()
 
   char buf[1024];
   ssize_t nread;
-  ssize_t total_read = 0;
   std::vector<char> response;
   int again = 0;
   const int again_before_sleep = 5;
@@ -195,9 +194,8 @@ void HttpClient::perform_request()
     nread = read(fd_skt, buf, sizeof(buf));
     // std::cout << "Read " << nread << " bytes\n";
     if (nread > 0) {
-      total_read += nread;
       for (int i = 0; i < nread; response.push_back(buf[i++]));
-      if (nread < sizeof(buf)) {
+      if (nread < (ssize_t) sizeof(buf)) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
         set_flag(fd_skt, O_NONBLOCK);
         again++;
@@ -307,7 +305,7 @@ int GetAddrInfo::connect()
   struct addrinfo* rp;
   int sfd = -1;
   for (rp = infop ; rp != nullptr; rp = rp->ai_next) {
-    struct sockaddr_in *sa = (struct sockaddr_in *)rp->ai_addr;
+    // struct sockaddr_in *sa = (struct sockaddr_in *)rp->ai_addr;
     // printf("Trying  %s on port %d\n", inet_ntoa(sa->sin_addr), ntohs(sa->sin_port));
     sfd = socket(rp->ai_family, rp->ai_socktype,
                      rp->ai_protocol);

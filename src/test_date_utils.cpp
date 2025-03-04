@@ -31,7 +31,7 @@ bool test_construct_string_yyyy_mm_dd_hh_mm_ss()
 {
   const std::string test_date = "2022-05-16 21:54:34";
   DateTime tm(test_date);
-  auto date = tm.get_time_as_tm();
+  // auto date = tm.get_time_as_tm();
   // std::cout << "put_time: " << std::put_time(&date, "%F %T %Z") << '\n';
   std::ostringstream os;
   os << tm;
@@ -173,7 +173,7 @@ bool test_as_dd_mon_yyyy_hh_mm_ss_north_hemi_winter_date()
 
 bool test_as_dd_mon_yyyy_hh_mm_ss_north_hemi_winter_date_02()
 {
-  std::tm t = {};
+  // std::tm t = {};
   const std::string test_date = "2020-11-30 14:14:42";
   DateTime tm(test_date);
   std::string result = tm.to_string(DateTime::dd_mon_yyyy_hh_mm_ss);

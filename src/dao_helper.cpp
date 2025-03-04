@@ -155,7 +155,7 @@ dao_helper::result_order dao_helper::get_result_order(
 {
   auto f = params.find(key);
   if (f == params.end() || f->second != "DESC")
-    return ascending;
+    return default_value;
   return descending;
 }
 

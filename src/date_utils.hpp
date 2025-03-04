@@ -99,7 +99,6 @@ namespace utils
     std::string convert_asctime_to_iso8601(
         const std::smatch &m, std::string date);
     std::string convert_dd_mon_yyyy_hh_mm_ss_to_iso8601(
-        const std::smatch &m,
         std::string date);
     void init(std::string);
     // void init(std::time_t);

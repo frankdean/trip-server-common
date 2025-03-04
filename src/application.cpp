@@ -43,15 +43,14 @@ volatile bool Application::exit_now = false;
 Logger Application::logger("application", std::clog, Logger::info);
 
 Application::Application(std::string listen_address,
-                         std::string port,
-                         std::string locale_str)
+                         std::string port)
   :
   socket_queue(),
   socket(listen_address, port),
   workers(),
   worker_threads()
 {
-  initialize_locale(locale_str);
+  initialize_locale();
 }
 
 Application::~Application()
@@ -66,7 +65,7 @@ Application::~Application()
   std::wcout.imbue(std::locale("C"));
 }
 
-void Application::initialize_locale(std::string locale_str) const
+void Application::initialize_locale() const
 {
   std::cerr.imbue(std::locale());
   std::cout.imbue(std::locale());
@@ -114,10 +113,10 @@ void Application::read_config_file(std::string config_filename)
       std::cout << "Reading configuration from " << config_filename << '\n';
 #endif
     }
-    auto start = std::chrono::system_clock::now();
+    // auto start = std::chrono::system_clock::now();
     config = std::unique_ptr<Configuration>(new Configuration(config_filename));
-    auto finish = std::chrono::system_clock::now();
-    auto diff = finish - start;
+    // auto finish = std::chrono::system_clock::now();
+    // auto diff = finish - start;
     // if (GetOptions::verbose_flag) {
     //   std::cout << "Read configuration from " << config_filename << " in "
     //             << std::chrono::duration_cast<std::chrono::microseconds>(diff).count()
@@ -153,7 +152,7 @@ void Application::stop_workers() const
     std::cout << "Stoping " << count << " worker(s)\n";
 #endif
   }
-  for (const auto worker : workers) {
+  for (const auto &worker : workers) {
     worker->stop();
   }
   readyCondVar.notify_all();

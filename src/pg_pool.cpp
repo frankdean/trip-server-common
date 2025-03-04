@@ -36,7 +36,7 @@ using namespace boost::locale;
 #endif
 
 PgPoolManager::PgPoolManager(std::string connect_string, int pool_size)
-  : DbErrorHandler(), mutex(), ready(), connect_string(connect_string)
+  : DbErrorHandler(), connect_string(connect_string), mutex(), ready()
 {
   if (GetOptions::verbose_flag) {
 #ifdef HAVE_BOOST_LOCALE
@@ -102,7 +102,7 @@ void PgPoolManager::refresh_connections()
     ready.wait(lock);
 
   auto size = queue.size();
-  for (int i = 0; i < size; i++) {
+  for (std::queue<std::shared_ptr<pqxx::connection>>::size_type i = 0; i < size; i++) {
     queue.pop();
 #ifdef HAVE_LIBPQXX7
     queue.emplace(std::make_shared<connection>(connect_string));

@@ -68,6 +68,8 @@ protected:
   virtual iter_type
       do_put(iter_type out, bool intl, std::ios_base& str, char_type fill,
              long double units) const override {
+    (void) intl; // Unused
+    (void) fill;
     std::ostringstream ss;
     ss.imbue(std::locale(name));
     // ss.setf(str.showbase | str.adjustfield | str.floatfield | str.showbase | str.showpoint | str.showpos | str.skipws);
@@ -125,7 +127,6 @@ private:
   std::string boundary_key;
   /// Holds the current multipart form part during parsing
   multipart_type current_part;
-  bool _keep_alive;
   param_map query_params;
   param_map post_params;
   void handle_multipart_form_data(const std::string &s);
