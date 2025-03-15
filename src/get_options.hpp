@@ -40,7 +40,7 @@ struct GetOptions
   std::string program_name;
   std::string listen_address = "0.0.0.0";
   std::string port="8080";
-#ifdef ALLOW_STATIC_FILES
+#ifdef ENABLE_STATIC_FILES
   std::string doc_root=".";
 #endif
   class UnexpectedArgumentException : public std::exception {

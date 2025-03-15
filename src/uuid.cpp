@@ -20,19 +20,23 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include "../config.h"
-#include "uuid.hpp"
 #include <iostream>
-#ifdef HAVE_LIBUUID
-#include <uuid/uuid.h>
-#else
+#ifdef HAVE_OSSP_UUID_H
 // Not using the C++ wrapper as it does not have a pkg-config file in the Debian distro
 // #include <ossp/uuid++.hh>
 #include <ossp/uuid.h>
+#else
+#ifdef HAVE_UUID_UUID_H
+#include <uuid/uuid.h>
 #endif
+#endif
+
+#include <string>
+#include "uuid.hpp"
 
 using namespace fdsd::utils;
 
-#ifdef HAVE_OSSP_UUID
+#ifdef HAVE_OSSP_UUID_H
 /// Wrapper for creating an OSSP UUID context so that the context can be
 /// destroyed, including when an exception is thrown.
 class UuidContext {
@@ -64,35 +68,14 @@ UuidContext::~UuidContext()
       + err_str;
   }
 }
-#endif // HAVE_OSSP_UUID
+#endif // HAVE_OSSP_UUID_H
 
 
 std::string UUID::generate_uuid()
 {
-#ifdef HAVE_LIBUUID
-  uuid_t uuid;
-// #ifdef HAVE_LINUX_UUID
-//   int safe = uuid_generate_time_safe(uuid);
-//   if (safe == -1) {
-//     std::cerr << "WARNING: UUID was NOT generated in a safe manner\n"
-//       "This could allow duplicate UUIDs to be created when\n"
-//       "multiple processes generate UUIDs.\n\n"
-//       "Run the UUID daemon (from the uuid-runtime package on Debian)\n"
-//       " to support safe generattion.\n";
-//   } else {
-//     std::cerr << "INFO: UUID was generated in a safe manner\n";
-//   }
-// #else
-  // This should use /dev/random, if available, otherwise time and mac based
-  uuid_generate(uuid);
-// #endif
-  char uuid_str[37];
-  uuid_unparse_lower(uuid, uuid_str); // 1b4e28ba-2fa1-11d2-883f-0016d3cca427
-  std::string retval(uuid_str);
-  // std::cerr << "Created UUID\n";
-  return retval;
-#else
-  #ifdef HAVE_OSSP_UUID
+  // Note comments in PostgreSQL documents stating OSSP is not well maintained.
+  // https://www.postgresql.org/docs/current/uuid-ossp.html
+#ifdef HAVE_OSSP_UUID_H
   UuidContext uuid_context;
   uuid_rc_t rc;
   if ((rc = uuid_make(uuid_context.get_context(),
@@ -114,6 +97,30 @@ std::string UUID::generate_uuid()
   free(str);
   return retval;
 #else
+#ifdef HAVE_UUID_UUID_H
+  uuid_t uuid;
+  std::cout << "Generating UUID\n";
+#ifdef HAVE_SAFE_UUID
+  int safe = uuid_generate_time_safe(uuid);
+  if (safe == -1) {
+    std::cerr << "WARNING: UUID was NOT generated in a safe manner\n"
+      "This could allow duplicate UUIDs to be created when\n"
+      "multiple processes generate UUIDs.\n\n"
+      "Run the UUID daemon (from the uuid-runtime package on Debian)\n"
+      " to support safe generation.\n";
+  } else {
+    std::cerr << "INFO: UUID was generated in a safe manner\n";
+  }
+#else
+  // This should use /dev/random, if available, otherwise time and mac based
+  uuid_generate(uuid);
+#endif
+  char uuid_str[37];
+  uuid_unparse_lower(uuid, uuid_str); // 1b4e28ba-2fa1-11d2-883f-0016d3cca427
+  std::string retval(uuid_str);
+  // std::cerr << "Created UUID\n";
+  return retval;
+#else
   throw std::runtime_error("UUID library not available");
 #endif
 #endif
@@ -121,21 +128,9 @@ std::string UUID::generate_uuid()
 
 bool UUID::is_valid(const std::string s)
 {
-#ifdef HAVE_LIBUUID
-  uuid_t ctx;
-  int r = uuid_parse(s.c_str(), ctx);
-  // char uuid_str[37];
-  // uuid_unparse_lower(uu, uuid_str);
-  // std::string s(uuid_str);
-  // std::cout << "UUID: \"" << uuid << "\" is " << (r == 0 ? "valid" : "invalid") << '\n';
-  // if (r == 0)
-  //   std::cout << "Parsed as " << s << '\n';
-  return r == 0;
-#else
-#ifdef HAVE_OSSP_UUID
+#ifdef HAVE_OSSP_UUID_H
   if (s.length() != UUID_LEN_STR)
     return false;
-  const char* str = s.c_str();
   UuidContext uuid_context;
   uuid_rc_t rc;
   rc = uuid_import(uuid_context.get_context(),
@@ -147,6 +142,17 @@ bool UUID::is_valid(const std::string s)
   //             << uuid_error(rc) << '\n';
   // }
   return rc == UUID_RC_OK;
+#else
+#ifdef HAVE_UUID_UUID_H
+  uuid_t ctx;
+  int r = uuid_parse(s.c_str(), ctx);
+  // char uuid_str[37];
+  // uuid_unparse_lower(uu, uuid_str);
+  // std::string s(uuid_str);
+  // std::cout << "UUID: \"" << uuid << "\" is " << (r == 0 ? "valid" : "invalid") << '\n';
+  // if (r == 0)
+  //   std::cout << "Parsed as " << s << '\n';
+  return r == 0;
 #else
   throw std::runtime_error("UUID library not available");
 #endif

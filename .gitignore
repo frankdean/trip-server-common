@@ -42,3 +42,4 @@
 /tests/testsuite
 /tests/testsuite.log
 /trip-server-common-*.tar.?z
+/m4/autom4te.cache/

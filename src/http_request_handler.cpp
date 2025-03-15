@@ -155,7 +155,7 @@ void CssRequestHandler::handle_request(
   response.set_header("Content-Length", std::to_string(response.content.str().length()));
 }
 
-#ifdef ALLOW_STATIC_FILES
+#ifdef ENABLE_STATIC_FILES
 
 /**
  * Handles reading a file referenced from the passed request's URI value.  The
@@ -227,7 +227,7 @@ void FileRequestHandler::set_content_headers(HTTPServerResponse& response) const
   response.set_header("Content-Length", std::to_string(response.content.str().length()));
 }
 
-#ifdef ALLOW_DIRECTORY_LISTING
+#ifdef ENABLE_DIRECTORY_LISTING
 /**
  * Reads the contents of a directory, using the URI in the passed request
  * object.
@@ -334,7 +334,7 @@ void FileRequestHandler::handle_request(
   }
   // std::cout << "Path is OK\n";
   std::string full_path = document_root + relative_path;
-#ifdef ALLOW_DIRECTORY_LISTING
+#ifdef ENABLE_DIRECTORY_LISTING
   if (FileUtils::is_directory(full_path)) {
     try {
       append_doc_type(response.content);
@@ -376,7 +376,7 @@ bool FileRequestHandler::can_handle(const HTTPServerRequest& request) const
   std::string full_path = document_root + relative_path;
   // std::cout << "Can handle full path: ? \"" << full_path << "\"\n";
   if (FileUtils::is_directory(full_path)) {
-#ifndef ALLOW_DIRECTORY_LISTING
+#ifndef ENABLE_DIRECTORY_LISTING
     // std::cout << '"' << full_path << "\" is a directory... returning false\n";
     return false;
 #else
@@ -388,7 +388,7 @@ bool FileRequestHandler::can_handle(const HTTPServerRequest& request) const
     return true;
   return false;
 }
-#endif // ALLOW_STATIC_FILES
+#endif // ENABLE_STATIC_FILES
 
 Logger HTTPRequestHandler::logger(
   "HTTPRequestHandler",

@@ -27,7 +27,7 @@ using namespace fdsd::utils;
 
 #ifdef HAVE_GETOPT_H
 
-#ifdef ALLOW_STATIC_FILES
+#ifdef ENABLE_STATIC_FILES
 const char GetOptions::short_opts[] = "hs:p:r:c:vV";
 #else
 const char GetOptions::short_opts[] = "hs:p:c:vV";
@@ -40,7 +40,7 @@ struct option GetOptions::long_options[] = {
   {"help",                no_argument,       NULL,             'h'},
   {"listen",              required_argument, NULL,             's'},
   {"port",                required_argument, NULL,             'p'},
-#ifdef ALLOW_STATIC_FILES
+#ifdef ENABLE_STATIC_FILES
   {"root",                required_argument, NULL,             'r'},
 #endif
   {"config-file",         required_argument, NULL,             'c'},
@@ -65,7 +65,7 @@ bool GetOptions::handle_option(int c)
     case 'p':
       port = optarg;
       break;
-#ifdef ALLOW_STATIC_FILES
+#ifdef ENABLE_STATIC_FILES
     case 'r':
       doc_root = optarg;
       break;
@@ -123,7 +123,7 @@ bool GetOptions::init(int argc, char* argv[])
 
 #else // not using getopt
   const int expected_args =
-#ifdef ALLOW_STATIC_FILES
+#ifdef ENABLE_STATIC_FILES
     4
 #else
     3
@@ -135,7 +135,7 @@ bool GetOptions::init(int argc, char* argv[])
   } else {
     listen_address = argv[1];
     port = argv[2];
-#ifdef ALLOW_STATIC_FILES
+#ifdef ENABLE_STATIC_FILES
     doc_root = argv[3];
 #endif
   }
@@ -154,7 +154,7 @@ void GetOptions::usage(std::ostream& os) const
     << "  -v, --version\t\t\t\tshow version information, then exit\n"
     << "  -s, --listen=ADDRESS\t\t\tlisten address, e.g. 0.0.0.0\n"
     << "  -p, --port=PORT\t\t\tport number, e.g. 8080\n"
-#ifdef ALLOW_STATIC_FILES
+#ifdef ENABLE_STATIC_FILES
     << "  -r, --root=DIRECTORY\t\t\tdocument root directory\n"
 #endif
     << "  -c, --config-filename=FILENAME\tconfiguration file name\n"
@@ -162,13 +162,13 @@ void GetOptions::usage(std::ostream& os) const
 #else
   os
     << "Usage: " << program_name << " <address> <port>"
-#ifdef ALLOW_STATIC_FILES
+#ifdef ENABLE_STATIC_FILES
     << " <doc_root>"
 #endif
     << '\n'
     << "Example:\n"
     << "    " << program_name << " 0.0.0.0 8080"
-#ifdef ALLOW_STATIC_FILES
+#ifdef ENABLE_STATIC_FILES
     << " ."
 #endif
     << '\n';

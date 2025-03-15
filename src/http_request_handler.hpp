@@ -251,7 +251,7 @@ public:
       HTTPServerResponse& response) override;
 };
 
-#ifdef ALLOW_STATIC_FILES
+#ifdef ENABLE_STATIC_FILES
 class FileRequestHandler : public BaseRequestHandler {
 private:
   std::string document_root;
@@ -260,7 +260,7 @@ protected:
       const HTTPServerRequest& request,
       HTTPServerResponse& response);
   virtual void set_content_headers(HTTPServerResponse& response) const override;
-#ifdef ALLOW_DIRECTORY_LISTING
+#ifdef ENABLE_DIRECTORY_LISTING
   virtual void handle_directory(
       const HTTPServerRequest& request,
       HTTPServerResponse& response) const;

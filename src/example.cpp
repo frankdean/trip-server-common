@@ -61,7 +61,7 @@ int ExampleGetOptions::example_flag = 0;
 
 #ifdef HAVE_GETOPT_H
 
-#ifdef ALLOW_STATIC_FILES
+#ifdef ENABLE_STATIC_FILES
 const char ExampleGetOptions::short_opts[] = "hs:p:r:c:vVft:e";
 #else
 const char ExampleGetOptions::short_opts[] = "hs:p:c:vVft:e";
@@ -72,7 +72,7 @@ struct option ExampleGetOptions::long_options[] = {
   {"help",                no_argument,       NULL,             'h'},
   {"listen",              required_argument, NULL,             's'},
   {"port",                required_argument, NULL,             'p'},
-#ifdef ALLOW_STATIC_FILES
+#ifdef ENABLE_STATIC_FILES
   {"root",                required_argument, NULL,             'r'},
 #endif
   {"config-file",         required_argument, NULL,             'c'},
@@ -116,7 +116,7 @@ void ExampleGetOptions::usage(std::ostream& os) const
     << "  -v, --version\t\t\t\tshow version information, then exit\n"
     << "  -s, --listen=ADDRESS\t\t\tlisten address, e.g. 0.0.0.0\n"
     << "  -p, --port=PORT\t\t\tport number, e.g. 8080\n"
-#ifdef ALLOW_STATIC_FILES
+#ifdef ENABLE_STATIC_FILES
     << "  -r, --root=DIRECTORY\t\t\tdocument root directory\n"
 #endif
     << "  -c, --config-file=FILENAME\t\tconfiguration file name\n"
@@ -126,13 +126,13 @@ void ExampleGetOptions::usage(std::ostream& os) const
 #else
   os
     << "Usage: " << program_name << " <address> <port>"
-#ifdef ALLOW_STATIC_FILES
+#ifdef ENABLE_STATIC_FILES
     << " <doc_root>"
 #endif
     << '\n'
     << "Example:\n"
     << "    http-server-sync 0.0.0.0 8080"
-#ifdef ALLOW_STATIC_FILES
+#ifdef ENABLE_STATIC_FILES
     << " ."
 #endif
     << '\n';
@@ -481,7 +481,7 @@ ExampleRequestFactory::ExampleRequestFactory(
   pre_login_handlers.push_back(
       std::make_shared<ExampleRequestHandler>(
           ExampleRequestHandler(get_uri_prefix())));
-#ifdef ALLOW_STATIC_FILES
+#ifdef ENABLE_STATIC_FILES
   pre_login_handlers.push_back(
       std::make_shared<FileRequestHandler>(
           FileRequestHandler(get_uri_prefix(),
@@ -579,8 +579,7 @@ ExampleApplication::ExampleApplication(std::string listen_address,
                                        std::string locale) :
   Application(
     listen_address,
-    port,
-    locale),
+    port),
   config_filename(),
   document_root("")
 {
@@ -634,13 +633,13 @@ int main (int argc, char *argv[])
       application.set_config_filename(options.config_filename);
 
     application.read_config_file(options.config_filename);
-#ifdef ALLOW_STATIC_FILES
+#ifdef ENABLE_STATIC_FILES
     if (!options.doc_root.empty()) {
       if (options.doc_root.substr(options.doc_root.length() -1, 1) != "/")
         options.doc_root.append("/");
       application.set_document_root(options.doc_root);
     }
-#endif // ALLOW_STATIC_FILES
+#endif // ENABLE_STATIC_FILES
 
 #ifdef HAVE_PQXX_CONFIG_PUBLIC_COMPILER_H
     // Initialize the global database pool and user session managers
@@ -671,13 +670,13 @@ int main (int argc, char *argv[])
            << options.listen_address << ':' << options.port
            << default_application_uri_prefix
            << Logger::endl;
-#ifdef ALLOW_STATIC_FILES
+#ifdef ENABLE_STATIC_FILES
     logger
       << Logger::info
       << "This application has been built with the option to serve "
       "static files from the \"" << options.doc_root
       << "\" directory."
-#ifdef ALLOW_DIRECTORY_LISTING
+#ifdef ENABLE_DIRECTORY_LISTING
       << "\nAdditionally, listing directories under the document root is "
       "enabled."
 #endif
