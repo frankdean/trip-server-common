@@ -78,7 +78,12 @@ When running the `./configure` command to build this application, define
 `PKG_CONFIG_PATH` to include where `libpqxx.pc` and d`libpq.pc` are installed,
 e.g.:
 
-	./configure PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:$(pg_config --libdir)/pkgconfig"
+	$ ./configure PKG_CONFIG_PATH="$(pg_config --libdir)/pkgconfig"
+
+You may also need to specify the folder containing libpqxx's include files, e.g.
+
+	$ ./configure PKG_CONFIG_PATH="$(pg_config --libdir)/pkgconfig" \
+	CXX=/usr/bin/g++ CPPFLAGS=-I/opt/local/include
 
 Add `CXXFLAGS='-g -O0'` to disable compiler optimisation.
 

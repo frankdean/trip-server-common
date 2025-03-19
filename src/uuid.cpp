@@ -99,7 +99,6 @@ std::string UUID::generate_uuid()
 #else
 #ifdef HAVE_UUID_UUID_H
   uuid_t uuid;
-  std::cout << "Generating UUID\n";
 #ifdef HAVE_SAFE_UUID
   int safe = uuid_generate_time_safe(uuid);
   if (safe == -1) {

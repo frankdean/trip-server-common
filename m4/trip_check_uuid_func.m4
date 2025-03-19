@@ -23,21 +23,19 @@ AC_DEFUN([TRIP_CHECK_UUID_LIBS],
 	)
     AC_CHECK_HEADERS([uuid/uuid.h ossp/uuid.h],,,[@%:@include <string>])
 # Check we have at least one of the headers defined
-if test x$ac_cv_header_uuid_uuid_h != xyes && test x$ac_cv_header_ossp_uuid_h != xyes; then
-   AC_MSG_ERROR([Cannot find either uuid/uuid.h or ossp/uuid.h])
-fi[]dnl
+AS_IF([test x$ac_cv_header_uuid_uuid_h != xyes && test x$ac_cv_header_ossp_uuid_h != xyes],
+   [AC_MSG_ERROR([Cannot find either uuid/uuid.h or ossp/uuid.h])])
 ])
 
 # Check if the version of libuuid supports the uuid_generate_time_safe method
 AC_DEFUN([TRIP_CHECK_UUID_FUNC],
-    [if test "x$ac_cv_header_uuid_uuid_h" = xyes; then
+    [AS_IF([test "x$ac_cv_header_uuid_uuid_h" = xyes], [
 	AC_MSG_CHECKING([if libuuid supports uuid_generate_time_safe])
 	AC_LINK_IFELSE(
-	[AC_LANG_PROGRAM([[@%:@include <uuid/uuid.h>]],
-	[[  uuid_t uuid;
+	    [AC_LANG_PROGRAM([[@%:@include <uuid/uuid.h>]],
+	    [[  uuid_t uuid;
   int safe = uuid_generate_time_safe(uuid);]])],
-	[AC_MSG_RESULT([yes]) AC_DEFINE([HAVE_SAFE_UUID], [1], [Build with support for time safe UUID generation with libuuid])],
-	[AC_MSG_RESULT([no])]
-	)
-     fi[]dnl
-])
+	    [AC_MSG_RESULT([yes]) AC_DEFINE([HAVE_SAFE_UUID], [1], [Build with support for time safe UUID generation with libuuid])],
+	    [AC_MSG_RESULT([no])]
+	    )
+])])
