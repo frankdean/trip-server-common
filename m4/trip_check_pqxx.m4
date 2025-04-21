@@ -22,7 +22,7 @@ AC_DEFUN([TRIP_CHECK_PQXX_BINARY_CAST],
   pqxx::work tx(connection);
   pqxx::bytes_view b;
   auto r = tx.exec_params("SELECT * FROM (SELECT 1 AS xx) WHERE xx=$1::bytea", pqxx::binary_cast(b));
-  auto bs = r[0]["image"].as<std::basic_string<std::byte>>();]])],
+  auto bs = r[0]["image"].as<pqxx::bytes>();]])],
 	    AC_MSG_RESULT([yes]),
  	    AC_MSG_RESULT([no]) AC_DEFINE([ENABLE_LIBPQXX_BINARYSTRING], [1], [Use deprecated binarystring])
 	    AC_MSG_WARN([Link error using pqxx::binary_cast - libpqxx may have been compiled with options inconsistent with the options used to configure this application])
