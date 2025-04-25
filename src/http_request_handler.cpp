@@ -4,19 +4,19 @@
     This file is part of Trip Server 2, a program to support trip recording and
     itinerary planning.
 
-    Copyright (C) 2022-2024 Frank Dean <frank.dean@fdsd.co.uk>
+    Copyright (C) 2022-2025 Frank Dean <frank.dean@fdsd.co.uk>
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+    This program is free software: you can redistribute it and/or modify it
+    under the terms of the GNU Affero General Public License as published by the
+    Free Software Foundation, either version 3 of the License, or (at your
+    option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+    This program is distributed in the hope that it will be useful, but WITHOUT
+    ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+    FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Affero General Public License
+    for more details.
 
-    You should have received a copy of the GNU General Public License
+    You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 #include "../config.h"
@@ -423,10 +423,13 @@ void BaseRequestHandler::append_head_title_section(std::ostream& os) const
     os << "    <title>" << get_page_title() << "</title>\n";
 }
 
+const std::string BaseRequestHandler::css_stylesheet =
+  ".footer {padding: 10px; padding-top: 0.5rem!important; padding-bottom: 1.5rem!important;} .text-bg-secondary {color: #fff; background-color: RGBA(108,117,125);} .px-2 {padding-left: .5rem; padding-right: .5rem;} .py-2 {padding-top: .5rem; padding-bottom: .5rem;} .mt-5 {margin-top: 3rem;} .small {font-size: .875em;} .link-light {color: RGBA(249,250,251);}";
+
 void BaseRequestHandler::append_head_content(std::ostream& os) const
 {
   os <<
-    "    <style>.text-bg-secondary {color: #fff; background-color: RGBA(108,117,125);} .px-2 {padding-left: .5rem; padding-right: .5rem;} .py-2 {padding-top: .5rem; padding-bottom: .5rem;} .mt-5 {margin-top: 3rem;} .small {font-size: .875em;}</style>\n";
+    "    <style>" << BaseRequestHandler::css_stylesheet << "</style>\n";
 }
 
 void BaseRequestHandler::append_head_end(std::ostream& os) const
@@ -448,8 +451,8 @@ void BaseRequestHandler::append_footer_content(std::ostream& os) const
                  ::toupper);
   os <<
     "    <div class=\"footer px-2 py-2 mt-5 text-bg-secondary\">\n"
-    "      <div class=\"small\">" << package_name <<
-    " " << VERSION << "</div>\n"
+    "      <div class=\"small\" style=\"float: left\">" << package_name << " " << VERSION << "</div>\n"
+    "      <div class=\"small\" style=\"float: right\"><a href=\"" << TRIP_SOURCE_URL << "\" class=\"link-light\" target=\"_blank\">" << "source code" << "</a></div>\n"
     "    </div>\n";
 }
 

@@ -3,6 +3,9 @@
 
 AC_PREREQ([2.69])
 AC_INIT([example], [0.1.0], [frank.dean@fdsd.co.uk])
+TRIP_SOURCE_URL=[https://www.fdsd.co.uk/trip-server-2/]
+AC_SUBST([TRIP_SOURCE_URL])
+AC_DEFINE_UNQUOTED([TRIP_SOURCE_URL], ["${TRIP_SOURCE_URL}"], [The download URL for this application's source code])
 AC_COPYRIGHT([Copyright (C) 2022-2025 Frank Dean])
 dnl May fix an issue where the make files perform a rebuild of configure.ac,
 dnl Makefile.am etc.  Run ./configure with --enable-maintainer-mode to
