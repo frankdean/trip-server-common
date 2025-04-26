@@ -74,11 +74,14 @@ void Application::initialize_locale() const
 void Application::signalHandler(int signum)
 {
   // std::cout << "Interrupt signal: " << signum << std::endl;
-  try {
-    SessionManager::get_session_manager()->persist_sessions();
-  } catch (const std::exception& e) {
-    std::cerr << "Exception whilst handling signal\n"
-              << e.what() << Logger::endl;
+  auto mgr = SessionManager::get_session_manager();
+  if (mgr != nullptr) {
+    try {
+      mgr->persist_sessions();
+    } catch (const std::exception& e) {
+      std::cerr << "Exception whilst handling signal\n"
+                << e.what() << Logger::endl;
+    }
   }
   exit_now = signum != 0;
   // std::cout << "Finished handling signal" << std::endl;
