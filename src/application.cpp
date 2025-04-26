@@ -130,7 +130,7 @@ void Application::read_config_file(std::string config_filename)
 
 std::string Application::get_config_value(
     std::string key,
-    std::string default_value)
+    std::string default_value) const
 {
   if (config == nullptr) {
     std::cerr << "Config is null\n";

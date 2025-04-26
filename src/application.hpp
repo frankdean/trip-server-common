@@ -55,7 +55,7 @@ public:
               std::string port);
   virtual ~Application();
   void read_config_file(std::string config_filename);
-  std::string get_config_value(std::string key, std::string default_value="");
+  std::string get_config_value(std::string key, std::string default_value="") const;
   void initialize_locale() const;
   static void signalHandler(int signum);
   void run();
