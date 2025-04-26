@@ -56,6 +56,21 @@ public:
   ForbiddenException(std::string message) : BadRequestException(message) {}
 };
 
+/**
+ * Exception thrown when resource URL refers to a directory but does not end
+ * with a forward slash.
+ */
+class InvalidDirectoryPathException : public std::exception {
+  std::string message;
+public:
+  InvalidDirectoryPathException(std::string message) {
+    this->message = message;
+  }
+  virtual const char* what() const throw() override {
+    return message.c_str();
+  }
+};
+
 struct UserMessage {
   /// The type of the error message.
   enum Type {

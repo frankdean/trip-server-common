@@ -77,6 +77,8 @@ void BaseRequestHandler::redirect(const HTTPServerRequest& request,
                                   std::string location) const
 {
   (void)request; // unused
+  response.content.clear();
+  response.content.str("");
   response.status_code = HTTPStatus::found;
   response.set_header("Location", location);
 }
@@ -244,11 +246,10 @@ void FileRequestHandler::handle_directory(
   FileUtils::strip_prefix(get_uri_prefix(), uri);
   FileUtils::strip_query_params(uri);
   // Relative path handling is much easier if the browser is using a URL ending
-  // with the path separator.
-  if(request.uri.back() != '/') {
-    redirect(request, response, request.uri + '/');
-    return;
-  }
+  // with the path separator as we lose the last path element in the way the
+  // files are referenced.
+  if(request.uri.back() != '/')
+    throw InvalidDirectoryPathException("Path to a directory must end with a forward slash");
   std::string relative_path = UriUtils::uri_decode(uri, false);
   std::string full_path = document_root + relative_path;
   auto dir_list = FileUtils::get_directory(full_path);
@@ -351,6 +352,9 @@ void FileRequestHandler::handle_request(
       append_html_end(response.content);
       set_content_headers(response);
       response.set_header("Content-Type", get_mime_type("html"));
+      return;
+    } catch (const InvalidDirectoryPathException& e) {
+      redirect(request, response, request.uri + '/');
       return;
     } catch (const FileUtils::DirectoryAccessFailedException& e) {
       response.content.clear();
