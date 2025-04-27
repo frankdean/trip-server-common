@@ -150,6 +150,14 @@ bool Worker::handle_socket_read(fdsd::web::SocketHandler& socket_handler)
     //         << std::this_thread::get_id()
     //         << " Empty request" << Logger::endl;
 
+  } catch (const InvalidDirectoryPathException& e) {
+    // std::cout << "InvalidDirectoryPathException - redirecting\n";
+    auto response = request_factory->create_response_object();
+    response->status_code = HTTPStatus::found;
+    response->set_header("Location", request.uri + '/');
+    std::ostringstream response_message;
+    response->get_http_response_message(response_message);
+    socket_handler.send(response_message);
   } catch (const PayloadTooLarge &e) {
     auto response = request_factory->create_response_object();
     auto handler =

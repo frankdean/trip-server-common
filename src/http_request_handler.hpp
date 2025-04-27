@@ -269,9 +269,8 @@ public:
 
 #ifdef ENABLE_STATIC_FILES
 class FileRequestHandler : public BaseRequestHandler {
-private:
-  std::string document_root;
 protected:
+  std::string document_root;
   virtual void append_body_content(
       const HTTPServerRequest& request,
       HTTPServerResponse& response);

@@ -381,6 +381,11 @@ bool FileRequestHandler::can_handle(const HTTPServerRequest& request) const
   // std::cout << "Can handle full path: ? \"" << full_path << "\"\n";
   if (FileUtils::is_directory(full_path)) {
 #ifndef ENABLE_DIRECTORY_LISTING
+    // Reject if it's a directory, but the path doesn't end with a forward
+    // slash.
+    if(request.uri.back() != '/')
+      throw InvalidDirectoryPathException(
+          "Path to a directory must end with a forward slash");
     // std::cout << '"' << full_path << "\" is a directory... returning false\n";
     return false;
 #else
