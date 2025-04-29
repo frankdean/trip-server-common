@@ -84,6 +84,19 @@ std::string FileUtils::get_extension(std::string filename)
   return "";
 }
 
+/**
+ * Returns the filename part of the passed filename without the extension.
+ * \param filename without path
+ * \return the filename, stripped of the extension.
+ */
+std::string FileUtils::get_filename_without_extension(std::string filename)
+{
+  auto pos = filename.find_last_of('.');
+  if (pos == std::string::npos)
+    return filename;
+  return filename.substr(0, pos);
+}
+
 bool FileUtils::is_directory(std::string path)
 {
 #ifdef HAVE_CXX17

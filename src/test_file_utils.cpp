@@ -241,6 +241,32 @@ bool test_get_extension_html()
   return "html" == FileUtils::get_extension("foo-bar.html");
 }
 
+bool test_get_filename_without_extension_md() {
+  return "foo" == FileUtils::get_filename_without_extension("foo.md");
+}
+
+bool test_get_filename_without_extension_blank_extension() {
+  return "foo" == FileUtils::get_filename_without_extension("foo.");
+}
+
+bool test_get_filename_without_extension_period() {
+  return "" == FileUtils::get_filename_without_extension(".");
+}
+
+bool test_get_filename_without_extension_null() {
+  return "" == FileUtils::get_filename_without_extension("");
+}
+
+bool test_get_filename_without_extension_empty() {
+  return "" == FileUtils::get_filename_without_extension(".md");
+}
+
+bool test_get_filename_without_extension_no_extension() {
+  return "foo" == FileUtils::get_filename_without_extension("foo");
+}
+
+//  std::cout << "result: \"" << result << "\"\n";
+
 int main(void)
 {
   try {
@@ -264,6 +290,12 @@ int main(void)
         && test_get_extension_null_string()
         && test_get_extension()
         && test_get_extension_html()
+        && test_get_filename_without_extension_md()
+        && test_get_filename_without_extension_blank_extension()
+        && test_get_filename_without_extension_period()
+        && test_get_filename_without_extension_null()
+        && test_get_filename_without_extension_empty()
+        && test_get_filename_without_extension_no_extension()
       );
   } catch (const std::exception &e) {
     std::cerr << "Tests failed with: " << e.what() << '\n';

@@ -64,6 +64,7 @@ public:
   static void strip_prefix(std::string prefix, std::string& path);
   static void strip_query_params(std::string& path);
   static std::string get_extension(std::string filename);
+  static std::string get_filename_without_extension(std::string filename);
   static bool is_directory(std::string path);
   static bool is_file(std::string path);
   static file_details get_file_details(std::string path);
