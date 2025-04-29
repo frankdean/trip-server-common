@@ -54,6 +54,11 @@ std::unique_ptr<BaseRequestHandler>
     HTTPRequestFactory::manage_session_state(HTTPServerRequest &request,
                                              HTTPServerResponse& response) const
 {
+  auto cookie_name = get_session_id_cookie_name();
+  // If cookie name is not set, the application does not use cookies
+  if (cookie_name.empty())
+    return nullptr;
+
   if (is_login_uri(request.uri)) {
     if (logger.is_level(Logger::debug))
       logger << Logger::debug << "Returning a login handler for \""
@@ -70,7 +75,7 @@ std::unique_ptr<BaseRequestHandler>
     return h;
   }
 
-  std::string session_id = request.get_cookie(get_session_id_cookie_name());
+  std::string session_id = request.get_cookie(cookie_name);
   std::string user_id = get_user_id(session_id);
 
   if (logger.is_level(Logger::debug))

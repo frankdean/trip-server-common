@@ -61,14 +61,30 @@ public:
 protected:
   std::vector<std::shared_ptr<BaseRequestHandler>> pre_login_handlers;
   std::vector<std::shared_ptr<HTTPRequestHandler>> post_login_handlers;
-  virtual std::string get_session_id_cookie_name() const = 0;
-  virtual std::string get_user_id(std::string session_id) const = 0;
-  virtual bool is_login_uri(std::string uri) const = 0;
-  virtual std::unique_ptr<HTTPRequestHandler> get_login_handler() const = 0;
-  virtual bool is_logout_uri(std::string uri) const = 0;
-  virtual std::unique_ptr<HTTPRequestHandler> get_logout_handler() const = 0;
-  virtual bool is_application_prefix_uri(std::string uri) const = 0;
-  virtual std::unique_ptr<HTTPRequestHandler> get_not_found_handler() const = 0;
+
+  virtual std::string get_session_id_cookie_name() const {
+    // Return an empty string if the application does not use user session management
+    return "";
+  }
+  virtual std::string get_user_id(std::string session_id) const {
+    return "";
+  }
+  virtual bool is_login_uri(std::string uri) const {
+    return false;
+  }
+  virtual std::unique_ptr<web::HTTPRequestHandler> get_login_handler() const {
+    return nullptr;
+  }
+  virtual bool is_logout_uri(std::string uri) const {
+    return false;
+  }
+  virtual std::unique_ptr<web::HTTPRequestHandler> get_logout_handler() const {
+    return nullptr;
+  }
+  virtual bool is_application_prefix_uri(std::string uri) const {
+    return !uri.empty() && uri.find(get_uri_prefix()) == 0;
+  }
+  virtual std::unique_ptr<web::HTTPRequestHandler> get_not_found_handler() const = 0;
   void refresh_session(const HTTPServerRequest& request,
                        HTTPServerResponse& response) const;
   virtual std::unique_ptr<BaseRequestHandler> manage_session_state(HTTPServerRequest &request,
@@ -77,7 +93,9 @@ protected:
                        HTTPServerResponse& response) const;
   virtual std::unique_ptr<BaseRequestHandler> handle_post_login(HTTPServerRequest &request,
                         HTTPServerResponse& response) const;
-  virtual bool is_valid_session(std::string session_id, std::string user_id) const = 0;
+  virtual bool is_valid_session(std::string session_id, std::string user_id) const {
+    return false;
+  }
 };
 
 } // namespace web
