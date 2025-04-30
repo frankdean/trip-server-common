@@ -26,6 +26,7 @@
 #include "http_request_factory.hpp"
 #include "session.hpp"
 #include "worker.hpp"
+#include <cassert>
 #include <csignal>
 #ifdef HAVE_BOOST_LOCALE
 #include <boost/locale.hpp>
@@ -132,11 +133,13 @@ std::string Application::get_config_value(
     std::string key,
     std::string default_value) const
 {
+  assert(config != nullptr);
   if (config == nullptr) {
     std::cerr << "Config is null\n";
     syslog(LOG_ERR,
            "The `config` variable must not be null.  "
            "Application will abort.");
+    return "";
   }
   return config->get(key, default_value);
 }
