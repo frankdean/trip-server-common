@@ -38,10 +38,10 @@ struct GetOptions
   static struct option long_options[];
 #endif // HAVE_GETOPT_H
   std::string program_name;
-  std::string listen_address = "0.0.0.0";
-  std::string port="8080";
+  std::string listen_address;
+  std::string port;
 #ifdef ENABLE_STATIC_FILES
-  std::string doc_root=".";
+  std::string doc_root;
 #endif
   class UnexpectedArgumentException : public std::exception {
   public:
@@ -49,7 +49,16 @@ struct GetOptions
       return "Unexepected argument";
     }
   };
-  GetOptions() {}
+  GetOptions() : program_name(),
+                 listen_address("0.0.0.0"),
+                 port("8080"),
+                 doc_root(".") {}
+  GetOptions(std::string listen_address,
+             std::string port,
+             std::string doc_root) : program_name(),
+                                     listen_address(listen_address),
+                                     port(port),
+                                     doc_root(doc_root) {}
   virtual ~GetOptions() {}
   bool init(int argc, char* argv[]);
   std::string config_filename;
