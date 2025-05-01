@@ -125,7 +125,7 @@ std::string BaseRequestHandler::get_mime_type(std::string extension) const
 // }
 
 /// Escapes string with HTML entities
-std::string BaseRequestHandler::x(std::optional<std::string> s) const
+std::string BaseRequestHandler::x(std::optional<std::string> s)
 {
   return s.has_value() ? HTTPServerResponse::x(s.value()) : "";
 }
