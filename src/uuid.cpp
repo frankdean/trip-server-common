@@ -107,8 +107,8 @@ std::string UUID::generate_uuid()
       "multiple processes generate UUIDs.\n\n"
       "Run the UUID daemon (from the uuid-runtime package on Debian)\n"
       " to support safe generation.\n";
-  } else {
-    std::cerr << "INFO: UUID was generated in a safe manner\n";
+    // } else {
+    // std::cerr << "INFO: UUID was generated in a safe manner\n";
   }
 #else
   // This should use /dev/random, if available, otherwise time and mac based
