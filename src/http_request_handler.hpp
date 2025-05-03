@@ -160,6 +160,9 @@ protected:
    */
   UserMessage get_message(std::string code) const;
   virtual void append_messages_as_html(std::ostream& os) const;
+  void handle_request_failure(const HTTPServerRequest& request,
+                              HTTPServerResponse& response,
+                              HTTPStatus status_code);
   void handle_forbidden_request(
       const HTTPServerRequest& request,
       HTTPServerResponse& response);

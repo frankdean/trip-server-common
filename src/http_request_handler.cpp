@@ -559,15 +559,26 @@ void BaseRequestHandler::create_full_html_page_for_standard_response(
   set_content_headers(response);
 }
 
+void BaseRequestHandler::handle_request_failure(
+    const HTTPServerRequest& request,
+    HTTPServerResponse& response,
+    HTTPStatus status_code)
+{
+  if (GetOptions::verbose_flag)
+    std::cout << "Request failed.  Responding with HTTP status code: " << status_code << '\n';
+  (void)request; // unused
+  response.content.clear();
+  response.content.str("");
+  response.status_code = status_code;
+  create_full_html_page_for_standard_response(response);
+}
+
 void BaseRequestHandler::handle_forbidden_request(
     const HTTPServerRequest& request,
     HTTPServerResponse& response)
 {
   (void)request; // unused
-  response.content.clear();
-  response.content.str("");
-  response.status_code = HTTPStatus::forbidden;
-  create_full_html_page_for_standard_response(response);
+  handle_request_failure(request, response, HTTPStatus::forbidden);
 }
 
 void BaseRequestHandler::handle_bad_request(
@@ -575,10 +586,7 @@ void BaseRequestHandler::handle_bad_request(
     HTTPServerResponse& response)
 {
   (void)request; // unused
-  response.content.clear();
-  response.content.str("");
-  response.status_code = HTTPStatus::bad_request;
-  create_full_html_page_for_standard_response(response);
+  handle_request_failure(request, response, HTTPStatus::bad_request);
 }
 
 void BaseRequestHandler::append_element_disabled_flag(std::ostream &os,
@@ -644,20 +652,12 @@ void HTTPRequestHandler::handle_request(
         set_content_headers(response);
       }
     } catch (const ForbiddenException &e) {
-      std::cerr << "ForbiddenException occurred handling request: "
-                << e.what() << '\n';
       handle_forbidden_request(request, response);
     } catch (const BadRequestException &e) {
-      std::cerr << "BadRequestException occurred handling request: "
-            << e.what() << '\n';
       handle_bad_request(request, response);
     } catch (const std::invalid_argument &e) {
-      std::cerr << "std::invalid_argument exception occurred handling request: "
-                << e.what() << '\n';
       handle_bad_request(request, response);
     } catch (const std::out_of_range &e) {
-      std::cerr << "std::out_of_range exception occurred handling request: "
-                << e.what() << '\n';
       handle_bad_request(request, response);
     } catch (const PayloadTooLarge &e) {
       response.content.clear();
@@ -791,28 +791,18 @@ void AuthenticatedRequestHandler::preview_request(
     if (!user_id.empty())
       do_preview_request(request, response);
   } catch (const ForbiddenException &e) {
-    std::cerr << "ForbiddenException occurred previewing request: "
-              << e.what() << '\n';
     handle_forbidden_request(request, response);
   } catch (const BadRequestException &e) {
-    std::cerr << "BadRequestException occurred previewing request: "
-              << e.what() << '\n';
     handle_bad_request(request, response);
   } catch (const std::invalid_argument &e) {
-    std::cerr << "std::invalid_argument exception occurred previewing request: "
-              << e.what() << '\n';
     handle_bad_request(request, response);
   } catch (const std::out_of_range &e) {
-    std::cerr << "std::out_of_range exception occurred previewing request: "
-              << e.what() << '\n';
     handle_bad_request(request, response);
   } catch (const std::exception &e) {
-    std::cerr << "std::exception exception occurred previewing request: "
-              << e.what() << '\n';
-    response.content.clear();
-    response.content.str("");
-    response.status_code = HTTPStatus::internal_server_error;
-    create_full_html_page_for_standard_response(response);
+    if (GetOptions::verbose_flag)
+      std::cout << "Exception occurred handling request: " << e.what() << '\n';
+    handle_request_failure(request, response,
+                           HTTPStatus::internal_server_error);
   }
 }
 
