@@ -19,7 +19,9 @@
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+#include "../config.h"
 #include "http_client.hpp"
+#include "get_options.hpp"
 #include <algorithm>
 #include <iostream>
 #include <string>
@@ -147,16 +149,18 @@ void HttpClient::parse_response(std::vector<char> &response)
     std::string length_str = headers.at("Content-Length");
     try {
       std::string::size_type expected_length = std::stol(length_str);
-      if (expected_length != body.size()) {
+      if (GetOptions::verbose_flag && expected_length != body.size()) {
         std::cerr << "Content-Length: " << expected_length
                   << ", but body size is: " << body.size() << '\n';
       }
     } catch (const std::invalid_argument& e) {
-      std::cerr << "The Content-Length header is not numeric: \""
-                << length_str << "\"\n";
+      if (GetOptions::verbose_flag)
+        std::cerr << "The Content-Length header is not numeric: \""
+                  << length_str << "\"\n";
     } catch (const std::out_of_range& e) {
-      std::cerr << "The Content-Length header is too large a value to handle: \""
-                << length_str << "\"\n";
+      if (GetOptions::verbose_flag)
+        std::cerr << "The Content-Length header is too large a value to handle: \""
+                  << length_str << "\"\n";
     }
   } catch (const std::out_of_range& e) {
     // std::cerr << "The Content-Length header is missing from the response\n";
@@ -216,7 +220,8 @@ void HttpClient::perform_request()
           again = again_limit;
           break;
         case EBADF:
-          std::cerr << " Bad file descriptor (EBADF)"
+          if (GetOptions::verbose_flag)
+            std::cerr << " Bad file descriptor (EBADF)"
                     << " File descriptor\n";
           syslog(LOG_NOTICE,
                  "Bad file descripitor reading from %s",
@@ -232,8 +237,9 @@ void HttpClient::perform_request()
     }
   } // while
   if (again >= again_limit) {
-    std::cerr << "Abandoned reading response after the maximum "
-              << again_limit << " attempts";
+    if (GetOptions::verbose_flag)
+      std::cerr << "Abandoned reading response after the maximum "
+                << again_limit << " attempts";
     syslog(LOG_NOTICE,
            "Abandoned reading response after the maximum %d attempts",
            again_limit);

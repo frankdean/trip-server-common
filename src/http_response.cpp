@@ -22,6 +22,7 @@
 #include "http_response.hpp"
 #include "date_utils.hpp"
 #include "../config.h"
+#include "get_options.hpp"
 #include <ostream>
 #include <string>
 #include <syslog.h>
@@ -121,7 +122,8 @@ std::string HTTPServerResponse::get_status_message(HTTPStatus code) const
       message.append("Internal Server Error");
       break;
     default:
-      std::cerr << "WARNING: unhandled standard response for status code" << (int) code << '\n';
+      if (GetOptions::verbose_flag)
+        std::cerr << "WARNING: unhandled standard response for status code" << (int) code << '\n';
       syslog(LOG_ERR,
              "No message has been coded in standard response handler for status code %d",
              (int) code);

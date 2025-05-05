@@ -51,14 +51,20 @@ struct GetOptions
   };
   GetOptions() : program_name(),
                  listen_address("0.0.0.0"),
-                 port("8080"),
-                 doc_root(".") {}
+                 port("8080")
+#ifdef ENABLE_STATIC_FILES
+               ,doc_root(".")
+#endif
+    {}
   GetOptions(std::string listen_address,
              std::string port,
              std::string doc_root) : program_name(),
                                      listen_address(listen_address),
-                                     port(port),
-                                     doc_root(doc_root) {}
+                                     port(port)
+#ifdef ENABLE_STATIC_FILES
+                                   ,doc_root(doc_root)
+#endif
+    {}
   virtual ~GetOptions() {}
   bool init(int argc, char* argv[]);
   std::string config_filename;

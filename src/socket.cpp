@@ -23,6 +23,7 @@
 #include "http_request.hpp"
 #include "socket.hpp"
 #include "debug_utils.hpp"
+#include "get_options.hpp"
 #include "uri_utils.hpp"
 #include <arpa/inet.h>
 #include <chrono>
@@ -649,7 +650,7 @@ void SocketHandler::read(HTTPServerRequest &request)
           // }
           request.protocol = s;
           // std::cout << "Protocol: \"" << request.protocol << "\"\n";
-        } else {
+        } else if (GetOptions::verbose_flag) {
           std::cerr << "Warning: invalid request at line " << line_count << '\n';
         }
       } else {
@@ -661,7 +662,7 @@ void SocketHandler::read(HTTPServerRequest &request)
           const std::string value = p < s.size() ? s.substr(p+2) : "";
           // std::cout << "Header: \"" << key << "\" -> \"" << value << "\"\n";
           request.headers[key] = value;
-        } else {
+        } else if (GetOptions::verbose_flag) {
           std::cerr << "Warning: invalid header at line " << line_count << '\n';
         }
       }

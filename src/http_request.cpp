@@ -19,11 +19,13 @@
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
+#include "../config.h"
 #include "http_request.hpp"
 // #include "debug_utils.hpp"
 #include "http_response.hpp"
 #include "uri_utils.hpp"
 #include "dao_helper.hpp"
+#include "get_options.hpp"
 #include <cassert>
 #include <chrono>
 #include <cmath>
@@ -129,7 +131,7 @@ HTTPServerRequest::HTTPServerRequest(const std::string &http_request)
               // }
               protocol = s;
               // std::cout << "Protocol: \"" << protocol << "\"\n";
-            } else {
+            } else if (GetOptions::verbose_flag) {
               std::cerr << "Warning: invalid request at line " << count << '\n';
             }
           } else {
@@ -139,7 +141,7 @@ HTTPServerRequest::HTTPServerRequest(const std::string &http_request)
               std::string value = p < s.size() ? s.substr(p+2) : "";
               // std::cout << "Header: \"" << key << "\" -> \"" << value << "\"\n";
               headers[key] = value;
-            } else {
+            } else if (GetOptions::verbose_flag) {
               std::cerr << "Warning: invalid header at line " << count << '\n';
             }
           }
@@ -149,10 +151,12 @@ HTTPServerRequest::HTTPServerRequest(const std::string &http_request)
         }
       }
     } catch (std::ios_base::failure& e) {
-      std::cerr << "Error parsing HTTP request: " << e.what() << '\n';
+      if (GetOptions::verbose_flag)
+        std::cerr << "Error parsing HTTP request: " << e.what() << '\n';
       // GCC 8.3.0-6 on Debian 10 throws an error on the last line
 #ifndef __GNUG__
-      std::cerr << "ERROR: " << e.what() << '\n';
+      if (GetOptions::verbose_flag)
+        std::cerr << "ERROR: " << e.what() << '\n';
 #endif
     }
   } // while
@@ -206,8 +210,9 @@ std::optional<long>
     try {
       return std::stol(search->second);
     } catch (const std::invalid_argument &e) {
-      std::cerr << e.what() << " converting post param \""
-                << name << "\" -> \"" << search->second << "\"\n";
+      if (GetOptions::verbose_flag)
+        std::cerr << e.what() << " converting post param \""
+                  << name << "\" -> \"" << search->second << "\"\n";
       throw;
     }
   }
@@ -220,8 +225,9 @@ std::optional<double>
     try {
       return std::stod(search->second);
     } catch (const std::invalid_argument &e) {
-      std::cerr << e.what() << " converting post param \""
-                << name << "\" -> \"" << search->second << "\"\n";
+      if (GetOptions::verbose_flag)
+        std::cerr << e.what() << " converting post param \""
+                  << name << "\" -> \"" << search->second << "\"\n";
       throw;
     }
   }
@@ -324,7 +330,7 @@ void HTTPServerRequest::handle_multipart_form_data(const std::string &s)
             // Handle as a standard post parameter
             multiparts[name] = current_part;
           }
-        } else {
+        } else if (GetOptions::verbose_flag) {
           std::cerr << "Warning: could not find a name for the disposition content\n";
         }
         current_part.body.clear();
@@ -372,7 +378,7 @@ void HTTPServerRequest::handle_content_line(const std::string &s)
       content_type = ContentType::x_www_form_urlencoded;
     } else if (type.find("application/json") != std::string::npos) {
       content_type = ContentType::application_json;
-    } else if (method != HTTPMethod::get) {
+    } else if (GetOptions::verbose_flag && method != HTTPMethod::get) {
       if (type.empty()) {
         std::cerr << "Content type for uri \"" << uri << "\" is not specified\n";
       } else {

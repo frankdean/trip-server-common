@@ -22,6 +22,7 @@
 #include "../config.h"
 #include "dao_helper.hpp"
 #include "date_utils.hpp"
+#include "get_options.hpp"
 #include <chrono>
 #include <iomanip>
 #include <iostream>
@@ -170,13 +171,15 @@ std::time_t dao_helper::get_date(
       // std::cout << "dao_helper converted: \"" << f << "\" to \"" << time << "\"\n";
       return time.time_t();
     } catch (const std::logic_error& e) {
-      std::cerr << "Erorr converting parameter with key: \""
-                << key << "\" to date from \"" << f << "\"\n"
-                << e.what() << '\n';
+      if (GetOptions::verbose_flag)
+        std::cerr << "Erorr converting parameter with key: \""
+                  << key << "\" to date from \"" << f << "\"\n"
+                  << e.what() << '\n';
     }
   } catch (const std::out_of_range& e) {
-    std::cerr << "Failed to find parameter with key: \""
-              << key << "\"\n" << e.what() << '\n';
+    if (GetOptions::verbose_flag)
+      std::cerr << "Failed to find parameter with key: \""
+                << key << "\"\n" << e.what() << '\n';
   }
   return std::time_t(nullptr);
 }
