@@ -671,11 +671,13 @@ void HTTPRequestHandler::handle_request(
 #endif
     } catch (const std::exception &e) {
       std::ostringstream os;
-      os << typeid(e).name()
-         << " exception occurred handling request: "
-         << e.what();
-      std::cerr << os.str() << '\n';
-      syslog(LOG_ERR, "%s", os.str().c_str());
+      if (GetOptions::verbose_flag) {
+        os << typeid(e).name()
+           << " exception occurred handling request: "
+           << e.what();
+        std::cerr << os.str() << '\n';
+        syslog(LOG_ERR, "%s", os.str().c_str());
+      }
       response.content.clear();
       response.content.str("");
       response.status_code = HTTPStatus::internal_server_error;
