@@ -76,11 +76,17 @@ std::optional<std::string>
 void SessionManager::save_session(const std::string& session_id,
                                   const std::string& user_id)
 {
-  std::lock_guard<std::mutex> lock(session_mutex);
-  // std::cout << "Saving session_id \"" << session_id << "\" for " << user_id << '\n';
   Session s(user_id);
-  sessions[session_id] = s;
-  session_mutex.unlock();
+  {
+    std::lock_guard<std::mutex> lock(session_mutex);
+    // std::cout << "Saving session_id \"" << session_id << "\" for " << user_id << '\n';
+    sessions[session_id] = s;
+    // Calling unlock when not locked results in undefined behavior.  On FreeBSD
+    // 14.2 & 14.3 SIGTRAP is invoked on exiting this method's scope if we
+    // unlock it manually beforehand, so force the scope to terminate before
+    // calling session_updated().
+    // session_mutex.unlock();
+  }
   session_updated(session_id, s);
 }
 
