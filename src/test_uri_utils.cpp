@@ -36,6 +36,13 @@ bool test_simple_uri()
     "" == u.uri_decode("");
 }
 
+bool test_simple_uri_with_encoded_ampersand()
+{
+  const UriUtils u;
+  const auto result = u.uri_decode("Test%20%26%20again");
+  return "Test & again" == result;
+}
+
 bool test_not_url_form_encoded()
 {
   const UriUtils u;
@@ -92,6 +99,20 @@ bool test_form_decoded_plus_sign_02()
   return result == "+";
 }
 
+bool test_get_query_params()
+{
+  const std::string test_uri = "http://localhost:8080/fdsd/test?key1=value1&key2=v?lue2&key3=value3#fragment";
+  auto params = UriUtils::get_query_params(test_uri);
+  bool retval =  params.size() == 3 && params["key1"] == "value1" && params["key2"] == "v?lue2" && params["key3"] == "value3";
+  if (!retval) {
+    std::cout << "test_get_query_params failed\n";
+    for (auto p = params.begin(); p != params.end(); ++p) {
+      std::cout << p->first << '=' << p->second << '\n';
+    }
+  }
+  return retval;
+}
+
 bool test_get_account_query_params()
 {
   const std::string account_key = "account_id";
@@ -142,6 +163,32 @@ bool test_get_three_query_params()
     params[test_key2] == test_value2;
 }
 
+bool test_get_encoded_query_params()
+{
+  const std::string test_uri =
+    "http://localhost:8080/fdsd/test?key1=value1&note=Test%20%3D%20equals%20%26%20test%20ampersand";
+  auto params = UriUtils::get_query_params(test_uri);
+  // std::cout << "Note: " << params["note"] << '\n';
+  return params.size() == 2 && params["key1"] == "value1" &&
+    params["note"] == "Test = equals & test ampersand";
+}
+
+bool test_get_query_params_with_plus_sign()
+{
+  const std::string test_uri =
+    "http://localhost:8080/fdsd/test?key1=value1&note=Test+stuff&key3=value3";
+  auto params = UriUtils::get_query_params(test_uri);
+  bool retval = params.size() == 3 && params["key1"] == "value1" &&
+    params["note"] == "Test+stuff" && params["key3"] == "value3";
+  if (!retval) {
+    std::cout << "test_get_query_params_with_plus_sign failed\n";
+    for (auto p = params.begin(); p != params.end(); ++p) {
+      std::cout << p->first << '=' << p->second << '\n';
+    }
+  }
+  return retval;
+}
+
 bool test_get_empty_query_params()
 {
   const std::string test_uri = "http://localhost:8080/fdsd/test?";
@@ -153,6 +200,22 @@ bool test_get_empty_query_params()
 bool test_get_null_query_params()
 {
   const std::string test_uri = "http://localhost:8080/fdsd/test";
+  auto params = UriUtils::get_query_params(test_uri);
+  // std::cout << "Got " << params.size() << " parameters\n";
+  return params.size() == 0;
+}
+
+bool test_get_null_query_params_with_fragment()
+{
+  const std::string test_uri = "http://localhost:8080/fdsd/test#fragment";
+  auto params = UriUtils::get_query_params(test_uri);
+  // std::cout << "Got " << params.size() << " parameters\n";
+  return params.size() == 0;
+}
+
+bool test_get_null_query_params_with_empty_fragment()
+{
+  const std::string test_uri = "http://localhost:8080/fdsd/test#";
   auto params = UriUtils::get_query_params(test_uri);
   // std::cout << "Got " << params.size() << " parameters\n";
   return params.size() == 0;
@@ -184,10 +247,25 @@ bool test_get_invalid_query_params_04() {
 bool test_get_query_params_multiple_query_separators()
 {
   auto params = UriUtils::get_query_params("?key1=value1&key2=value2?key3=value3&key4=value4");
+  bool retval =  params.size() == 3 && params["key1"] == "value1" &&
+    params["key2"] == "value2?key3=value3" && params["key4"] == "value4";
+  if (!retval) {
+    std::cout << "test_get_query_params_multiple_query_separators failed\n";
+    for (auto p = params.begin(); p != params.end(); ++p) {
+      std::cout << p->first << '=' << p->second << '\n';
+    }
+  }
+  return retval;
+}
+
+bool test_get_query_params_ampersand_percent_encoded_value()
+{
+  auto params = UriUtils::get_query_params("?key1=value1&note=value %26 two&key3=value3");
+  // std::cout << "Parameters after parsing:\n";
   // for (auto p = params.begin(); p != params.end(); ++p) {
   //   std::cout << p->first << '=' << p->second << '\n';
   // }
-  return params.size() == 2 && params["key3"] == "value3" && params["key4"] == "value4";
+  return params.size() == 3 && params["key3"] == "value3" && params["note"] == "value & two";
 }
 
 bool test_encode_single_reserved_character()
@@ -256,20 +334,27 @@ int main(void)
           && test_invalid_uri()
           && test_not_url_form_encoded()
           && test_simple_uri()
+          && test_simple_uri_with_encoded_ampersand()
           && test_reserved_characters()
           && test_utf8_characters()
           && test_form_decoded_plus_sign_01()
           && test_form_decoded_plus_sign_02()
           && test_get_account_query_params()
+          && test_get_encoded_query_params()
+          && test_get_query_params_with_plus_sign()
           && test_get_empty_query_params()
           && test_get_null_query_params()
+          && test_get_null_query_params_with_fragment()
+          && test_get_null_query_params_with_empty_fragment()
           && test_get_two_query_params()
           && test_get_three_query_params()
           && test_get_invalid_query_params_01()
           && test_get_invalid_query_params_02()
           && test_get_invalid_query_params_03()
           && test_get_invalid_query_params_04()
+          && test_get_query_params()
           && test_get_query_params_multiple_query_separators()
+          && test_get_query_params_ampersand_percent_encoded_value()
           && test_encode_single_reserved_character()
           && test_encode_unreserved_character()
           && test_encode_all_unreserved_and_reserved_characters()

@@ -204,6 +204,17 @@ std::vector<std::string> UriUtils::split_params(std::string qs, std::string with
 
 /**
  * Extracts query parameters from a URI.
+ *
+ * RFC 3986
+ *  3.4.  Query
+ *
+ *     The query component contains non-hierarchical data that, along with
+ *     data in the path component (Section 3.3), serves to identify a
+ *     resource within the scope of the URI's scheme and naming authority
+ *     (if any).  The query component is indicated by the first question
+ *     mark ("?") character and terminated by a number sign ("#") character
+ *     or by the end of the URI.
+ *
  * \param uri the URI to extract the parameters from.
  * \return a std::map<std::string, std::string> as key-value pairs.  If the
  * URI does not contain a '?' character an empty string is returned.
@@ -211,10 +222,13 @@ std::vector<std::string> UriUtils::split_params(std::string qs, std::string with
 std::map<std::string, std::string> UriUtils::get_query_params(const std::string uri) {
   std::map<std::string, std::string> retval;
   std::string s;
-  std::string::size_type pos = uri.find_last_of('?');
+  const std::string::size_type pos = uri.find_first_of('?');
   if (pos != std::string::npos) {
-    s = uri.substr(pos + 1);
-    // std::cout << "Found ? at " << pos << '\n';
+    const std::string::size_type fpos = uri.find_first_of('#');
+    const std::string::size_type end =
+      (fpos == std::string::npos) ? uri.length() - pos : fpos - pos - 1;
+    s = uri.substr(pos + 1, end);
+    // std::cout << "Found ? at " << pos << " with end at " << end << '\n';
   } else {
     return retval;
   }
@@ -222,7 +236,7 @@ std::map<std::string, std::string> UriUtils::get_query_params(const std::string 
   std::vector<std::string> query_params = split_params(s, "&");
   for (std::string qp : query_params) {
     auto nv = split_pair(qp, "=");
-    retval[UriUtils::uri_decode(nv.first)] = UriUtils::uri_decode(nv.second);
+    retval[UriUtils::uri_decode(nv.first, false)] = UriUtils::uri_decode(nv.second, false);
   }
   return retval;
 }

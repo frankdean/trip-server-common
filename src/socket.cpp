@@ -645,7 +645,8 @@ void SocketHandler::read(HTTPServerRequest &request)
           // std::cout << "HTTP_REQUEST Path: \"" << request.uri << "\"\n";
           request.set_query_params(UriUtils::get_query_params(request.uri));
           // std::cout << "Query parameters:\n";
-          // for (auto qp = request.query_params.begin(); qp != request.query_params.end(); ++qp) {
+          // auto query_params = request.get_query_params();
+          // for (auto qp = query_params.begin(); qp != query_params.end(); ++qp) {
           //   std::cout << qp->first << '=' << qp->second << '\n';
           // }
           request.protocol = s;
