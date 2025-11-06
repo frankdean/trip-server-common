@@ -70,6 +70,7 @@ UuidContext::~UuidContext()
 }
 #endif // HAVE_OSSP_UUID_H
 
+bool UUID::unsafe_uuid_warning = false;
 
 std::string UUID::generate_uuid()
 {
@@ -102,13 +103,17 @@ std::string UUID::generate_uuid()
 #ifdef HAVE_SAFE_UUID
   int safe = uuid_generate_time_safe(uuid);
   if (safe == -1) {
-    std::cerr << "WARNING: UUID was NOT generated in a safe manner\n"
-      "This could allow duplicate UUIDs to be created when\n"
-      "multiple processes generate UUIDs.\n\n"
-      "Run the UUID daemon (from the uuid-runtime package on Debian)\n"
-      " to support safe generation.\n";
-    // } else {
-    // std::cerr << "INFO: UUID was generated in a safe manner\n";
+    // TODO issue warning just once
+    if (!unsafe_uuid_warning) {
+        std::cerr << "WARNING: UUID was NOT generated in a safe manner\n"
+          "This could allow duplicate UUIDs to be created when\n"
+          "multiple processes generate UUIDs.\n\n"
+          "On Linux, run the uuidd daemon (from the uuid-runtime package\n"
+          "on Debian) to support time safe generation.\n";
+        // } else {
+        // std::cerr << "INFO: UUID was generated in a safe manner\n";
+        unsafe_uuid_warning = true;
+    }
   }
 #else
   // This should use /dev/random, if available, otherwise time and mac based

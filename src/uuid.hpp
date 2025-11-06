@@ -32,6 +32,9 @@ namespace utils
 class UUID {
 private:
   UUID() {}
+  /// When true, the application has issued a warning about unsafe generation of
+  /// a UUID
+  static bool unsafe_uuid_warning;
 public:
   /// Generates a UUID
   static std::string generate_uuid();
