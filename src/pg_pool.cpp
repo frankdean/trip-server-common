@@ -35,6 +35,7 @@ using namespace pqxx;
 using namespace boost::locale;
 #endif
 
+/// \throws pqxx::broken_connection if database connection fails
 PgPoolManager::PgPoolManager(std::string connect_string, int pool_size)
   : DbErrorHandler(), connect_string(connect_string), mutex(), ready()
 {

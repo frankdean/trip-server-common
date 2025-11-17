@@ -71,6 +71,9 @@ int main(void)
     return !(
         test_exhausting_pool()
       );
+  } catch (const pqxx::broken_connection& e) {
+    std::cerr << " Test skipped pqxx::broken_connection: " <<  e.what() << '\n';
+    return 77;
   } catch (const std::exception &e) {
     std::cerr << "Tests failed with: " << e.what() << '\n';
     return 1;
