@@ -28,12 +28,13 @@ using namespace fdsd::utils;
 #ifdef HAVE_GETOPT_H
 
 #ifdef ENABLE_STATIC_FILES
-const char GetOptions::short_opts[] = "hs:p:r:c:vV";
+const char GetOptions::short_opts[] = "hs:p:r:c:vVd";
 #else
-const char GetOptions::short_opts[] = "hs:p:c:vV";
+const char GetOptions::short_opts[] = "hs:p:c:vVd";
 #endif
 
 int GetOptions::verbose_flag = 0;
+int GetOptions::debug_flag = 0;
 
 struct option GetOptions::long_options[] = {
   // Name                 Argument           Flag              Shortname
@@ -46,6 +47,7 @@ struct option GetOptions::long_options[] = {
   {"config-file",         required_argument, NULL,             'c'},
   {"verbose",             no_argument,       &GetOptions::verbose_flag,    1},
   {"version",             no_argument,       NULL,             'v'},
+  {"debug",              no_argument,       NULL,             'd'},
   {NULL, 0, NULL, 0}
 };
 
@@ -81,6 +83,9 @@ bool GetOptions::handle_option(int c)
       return false;
     case 'V':
       GetOptions::verbose_flag = 1;
+      break;
+    case 'd':
+      GetOptions::debug_flag = 1;
       break;
     case '?':
       // getopt_long already printed an error message

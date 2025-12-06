@@ -73,6 +73,7 @@ struct GetOptions
 #ifdef HAVE_GETOPT_H
   /// Indicates whether information output to the terminal should be verbose
   static int verbose_flag;
+  static int debug_flag;
   virtual bool handle_option(int c);
   virtual const struct option* get_long_options() const;
   virtual const char* get_short_options() const;
