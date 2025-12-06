@@ -43,6 +43,7 @@ void HttpOptions::add_header(std::string key, std::string value)
 std::string HttpOptions::to_string() const
 {
   return "protocol: \"" + protocol + "\", "
+    "proxyHost: \"" + proxyHost + "\", "
     " host: \"" + host + "\", "
     " port: \"" + port + "\", "
     " path: \"" + path + "\", "
@@ -129,12 +130,12 @@ void HttpClient::parse_response(std::vector<char> &response)
       // ignore
     }
   }
-  // std::cout << "Status code: " << status_code << '\n';
-
-  // std::cout << '\n';
-  // for (const auto &h : headers) {
-  //   std::cout << "Header: \"" << h.first << "\" -> \"" << h.second << "\"\n";
-  // }
+  if (GetOptions::debug_flag) {
+    std::cout << "Response status code: " << status_code << '\n';
+    std::cout << '\n';
+    for (const auto &h : headers)
+      std::cout << "Header: \"" << h.first << "\" -> \"" << h.second << "\"\n";
+  }
   if (body_begin != response.end()) {
     body = std::vector<char>(body_begin, response.end());
     // std::for_each(body.begin(), body.end(),
@@ -169,10 +170,13 @@ void HttpClient::parse_response(std::vector<char> &response)
 
 void HttpClient::perform_request()
 {
-  GetAddrInfo address_info(options.host, options.port);
-  // for (const auto address : address_info.addresses) {
-  //   std::cout << address << '\n';
-  // }
+  // When proxying the request we use the proxyHost address for the request.
+  // The caller should set the "Host" header to the host it's being proxied to,
+  // e.g. tile.openstreetmap.org not localhost
+  GetAddrInfo address_info(options.proxyHost.empty() ? options.host : options.proxyHost, options.port);
+  if (GetOptions::debug_flag)
+    for (const auto address : address_info.addresses)
+      std::cout << address << '\n';
   int fd_skt = address_info.connect();
   std::ostringstream request;
   request
@@ -184,7 +188,8 @@ void HttpClient::perform_request()
     request << h.first << ": " << h.second << "\r\n";
   request
     << "\r\n";
-  // std::cout << "Request:\n" << request.str() << "\n- - - end request - - -\n";
+  if (GetOptions::debug_flag)
+    std::cout << "Request:\n" << request.str() << "\n- - - end request - - -\n";
   if (write(fd_skt, request.str().c_str(), request.str().length()) <0 )
     throw std::runtime_error("Failure writing to socket");
 

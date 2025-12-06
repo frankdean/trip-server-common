@@ -40,6 +40,7 @@ struct HttpOptions {
   virtual ~HttpOptions() {}
   std::map<std::string, std::string> headers;
   std::string protocol = "http:";
+  std::string proxyHost = "";
   std::string host = "localhost";
   std::string port = "80";
   std::string path = "/";
