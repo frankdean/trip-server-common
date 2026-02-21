@@ -64,6 +64,7 @@ struct mime_type {
   { "js",   "text/javascript; charset=UTF-8" },
   { "js.map",   "text/javascript; charset=UTF-8" },
   { "json",  "application/json; charset=UTF-8" },
+  { "md",  "text/plain; charset=UTF-8" },
   { "mjs",   "text/javascript; charset=UTF-8" },
   { "png",  "image/png" },
   { "svg", "image/svg+xml" },
